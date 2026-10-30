@@ -59,7 +59,7 @@ func ParseLog(raw string) []LogLine {
 	parts := strings.Split(raw, "\n")
 	lines := make([]LogLine, 0, len(parts))
 	for _, p := range parts {
-		p = strings.TrimPrefix(p, bom)
+		p = cleanLogLine(strings.TrimPrefix(p, bom))
 		var ll LogLine
 		if sp := strings.IndexByte(p, ' '); sp > 0 && sp <= 40 {
 			if t, err := time.Parse(time.RFC3339Nano, p[:sp]); err == nil {

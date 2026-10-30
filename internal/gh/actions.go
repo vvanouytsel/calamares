@@ -288,7 +288,7 @@ func (c *Client) FileContent(ctx context.Context, repo, path, ref string) (strin
 		return resp.Content, nil
 	}
 	b, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(resp.Content, "\n", ""))
-	return string(b), err
+	return cleanText(string(b)), err
 }
 
 // PendingDeployments returns the environments a run is waiting on.
