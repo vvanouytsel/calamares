@@ -2,7 +2,6 @@ package gh
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -149,5 +148,5 @@ func (c *Client) statusGet(ctx context.Context, path string, v any) error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("the status page answered %s", resp.Status)
 	}
-	return json.Unmarshal(body, v)
+	return decode(body, v)
 }

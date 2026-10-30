@@ -30,7 +30,7 @@ func (c *Client) GraphQL(ctx context.Context, query string, vars map[string]any,
 	}
 	hasData := len(resp.Data) > 0 && string(resp.Data) != "null"
 	if hasData {
-		if err := json.Unmarshal(resp.Data, out); err != nil {
+		if err := decode(resp.Data, out); err != nil {
 			return err
 		}
 	}

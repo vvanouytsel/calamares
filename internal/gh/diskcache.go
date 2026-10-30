@@ -141,7 +141,7 @@ func (c *Client) Recall(name string, v any) (time.Time, bool) {
 	c.mu.Lock()
 	e, ok := c.cache[snapshotPrefix+name]
 	c.mu.Unlock()
-	if !ok || json.Unmarshal(e.body, v) != nil {
+	if !ok || decode(e.body, v) != nil {
 		return time.Time{}, false
 	}
 	return e.at, true

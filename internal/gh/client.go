@@ -273,7 +273,7 @@ func (c *Client) Get(ctx context.Context, path string, v any) error {
 	if v == nil {
 		return nil
 	}
-	if err := json.Unmarshal(body, v); err != nil {
+	if err := decode(body, v); err != nil {
 		return err
 	}
 	c.compact(path, body, v)
@@ -308,7 +308,7 @@ func (c *Client) Cached(path string, v any) bool {
 	c.mu.Lock()
 	e, ok := c.cache[c.url(path)]
 	c.mu.Unlock()
-	return ok && json.Unmarshal(e.body, v) == nil
+	return ok && decode(e.body, v) == nil
 }
 
 // getRaw GETs path; a request for a URL that is already in flight shares its
@@ -474,7 +474,7 @@ func (c *Client) sendJSON(ctx context.Context, method, path string, in, v any, m
 		c.mu.Unlock()
 	}
 	if v != nil && len(body) > 0 {
-		return json.Unmarshal(body, v)
+		return decode(body, v)
 	}
 	return nil
 }
@@ -667,7 +667,7 @@ func apiError(status int, body []byte) *APIError {
 	var payload struct {
 		Message string `json:"message"`
 	}
-	_ = json.Unmarshal(body, &payload)
+	_ = decode(body, &payload)
 	return &APIError{Status: status, Message: payload.Message}
 }
 
