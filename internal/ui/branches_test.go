@@ -50,7 +50,6 @@ func TestAMergedBranchIsDeletedAfterAQuestionButTheDefaultOneIsNot(t *testing.T)
 		t.Fatalf("X should ask first, modal %T", a.modal)
 	}
 	pressKeys(a, runes("y"))
-	time.Sleep(100 * time.Millisecond)
 	for _, m := range rec.posted {
 		_ = m
 	}

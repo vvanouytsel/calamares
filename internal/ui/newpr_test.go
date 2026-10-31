@@ -43,7 +43,6 @@ func TestUnpushedCommitsAreOfferedAndCreatingOpensThePullRequest(t *testing.T) {
 	f.fields[0].on = false // no git in this test
 	a.modal = f
 	pressKeys(a, tea.KeyMsg{Type: tea.KeyCtrlS})
-	time.Sleep(200 * time.Millisecond)
 	body := rec.body("/repos/o/r/pulls")
 	for _, want := range []string{`"title":"feat: a"`, `"head":"feat"`, `"base":"main"`, `"draft":false`} {
 		if !strings.Contains(body, want) {

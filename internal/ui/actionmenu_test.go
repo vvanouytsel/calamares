@@ -4,7 +4,6 @@ import (
 	"regexp"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/charmbracelet/x/ansi"
 	"github.com/vvanouytsel/calamares/internal/gh"
@@ -103,7 +102,6 @@ func TestRerunPickerOffersTheJobUnderTheCursorAndReruns(t *testing.T) {
 		t.Fatalf("a question should follow, modal is %T", a.modal)
 	}
 	press(a, "y")
-	time.Sleep(50 * time.Millisecond)
 	if fake.count() == 0 {
 		t.Errorf("confirming sent no request")
 	}

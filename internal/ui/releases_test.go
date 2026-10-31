@@ -55,7 +55,6 @@ func TestReleasesShowStateNotesAndAssets(t *testing.T) {
 func TestADraftIsDeletedAfterAQuestion(t *testing.T) {
 	a, _, rec := releasesApp(t)
 	pressKeys(a, tea.KeyMsg{Type: tea.KeyDown}, tea.KeyMsg{Type: tea.KeyDown}, runes("X"), runes("y"))
-	time.Sleep(100 * time.Millisecond)
 	if !rec.sawDelete("/repos/o/r/releases/1") {
 		t.Errorf("the draft was not deleted")
 	}

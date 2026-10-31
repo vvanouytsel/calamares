@@ -10,7 +10,9 @@ import (
 	"html"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -24,38 +26,86 @@ import (
 )
 
 // drive runs cmd and everything it triggers until the app is idle.
-// Clock ticks are dropped so the loop terminates.
+// Clock ticks are dropped so the loop terminates. Other timers (debounces,
+// glow bursts, refreshes after an action, looking for a dispatched run) are
+// fed back to the app, but once only timers are pending drive waits at most
+// timerGrace for one to fire: the short ones still play out, while the slow
+// ones, which reschedule themselves or fire seconds later, end the drive
+// instead of holding it until its timeout.
 func drive(a *App, cmd tea.Cmd, timeout time.Duration) {
-	ch := make(chan tea.Msg, 4096)
-	pending := 0
+	type result struct {
+		msg   tea.Msg
+		timer bool
+	}
+	ch := make(chan result, 4096)
+	busy, timers := 0, 0
 	var start func(tea.Cmd)
 	start = func(c tea.Cmd) {
 		if c == nil {
 			return
 		}
-		pending++
-		go func() { ch <- c() }()
+		timer := isTimer(c)
+		if timer {
+			timers++
+		} else {
+			busy++
+		}
+		go func() { ch <- result{c(), timer} }()
 	}
 	start(cmd)
 	deadline := time.After(timeout)
-	for pending > 0 {
+	for busy+timers > 0 {
+		var quiet <-chan time.Time
+		if busy == 0 {
+			quiet = time.After(timerGrace)
+		}
 		select {
-		case m := <-ch:
-			pending--
-			switch mm := m.(type) {
+		case r := <-ch:
+			if r.timer {
+				timers--
+			} else {
+				busy--
+			}
+			switch mm := r.msg.(type) {
 			case nil, tickMsg, animMsg:
 			case tea.BatchMsg:
 				for _, c := range mm {
 					start(c)
 				}
 			default:
-				_, c := a.Update(m)
+				_, c := a.Update(r.msg)
 				start(c)
 			}
+		case <-quiet:
+			return
 		case <-deadline:
 			return
 		}
 	}
+}
+
+// timerGrace is how long drive waits on timers alone: longer than the
+// longest debounce (the palette search, 400 ms).
+const timerGrace = 500 * time.Millisecond
+
+// timerCmds are the functions whose commands only wait: tea.Tick, tea.Every
+// and the blink of a text cursor.
+var timerCmds = []string{
+	"github.com/charmbracelet/bubbletea.Tick.",
+	"github.com/charmbracelet/bubbletea.Every.",
+	"github.com/charmbracelet/bubbles/cursor.(*Model).BlinkCmd.",
+}
+
+// isTimer tells a command that only waits from one that does work, such as
+// a request.
+func isTimer(c tea.Cmd) bool {
+	name := runtime.FuncForPC(reflect.ValueOf(c).Pointer()).Name()
+	for _, p := range timerCmds {
+		if strings.HasPrefix(name, p) {
+			return true
+		}
+	}
+	return false
 }
 
 func press(a *App, keys ...string) {

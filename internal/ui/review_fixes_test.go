@@ -81,7 +81,8 @@ func TestChecksWithTheSameNameStayApart(t *testing.T) {
 	}
 }
 
-// pagedGitHub answers GraphQL with one page after another.
+// pagedGitHub answers GraphQL with one page after another, then with an
+// HTTP 500: a failure the client does not try again, so no retry is waited out.
 type pagedGitHub struct {
 	mu    sync.Mutex
 	pages []string
@@ -92,7 +93,7 @@ func (p *pagedGitHub) RoundTrip(r *http.Request) (*http.Response, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	body := `{"message":"boom"}`
-	status := http.StatusBadGateway
+	status := http.StatusInternalServerError
 	if p.calls < len(p.pages) {
 		body, status = p.pages[p.calls], http.StatusOK
 	}
