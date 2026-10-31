@@ -7,6 +7,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/vvanouytsel/calamares/internal/config"
 	"github.com/vvanouytsel/calamares/internal/gh"
 )
 
@@ -127,6 +128,8 @@ func newRunView(a *App, repo string, run gh.Run) *runView {
 		pending:     map[int64]bool{},
 		poll:        newBackoff(a.liveEvery(), maxLiveEvery),
 		g:           graphState{zoom: zoomFit},
+		// A run still going is followed from the start: f stops it.
+		follow: run.Active(),
 	}
 }
 
@@ -585,12 +588,12 @@ func (v *runView) key(a *App, k string) tea.Cmd {
 }
 
 func (v *runView) Keys(a *App) []Binding {
-	follow := Binding{Keys: []string{"f"}, Desc: "follow", Help: "follow the running step", Off: !v.Following(),
+	follow := Binding{Keys: []string{"f"}, Desc: "follow", Help: "keep the cursor on the step that is running (on by default)", Off: !v.Following(),
 		Do: do(func() tea.Cmd { return v.toggleFollow(a) })}
 	if v.follow {
 		follow.Desc = "stop following"
 	}
-	graph := Binding{Keys: []string{"p"}, Desc: "pipeline", Help: "pipeline: the jobs as a graph",
+	graph := Binding{Keys: []string{"p"}, Desc: "pipeline", Help: "the jobs as a graph of what waits for what",
 		Do: do(func() tea.Cmd { return v.toggleGraph(a) })}
 	var bs []Binding
 	if v.graph {
@@ -601,33 +604,39 @@ func (v *runView) Keys(a *App) []Binding {
 	}
 	bs = append(bs,
 		graph,
-		Binding{Keys: []string{"v"}, Desc: "job yaml", Help: "the YAML of the selected job",
-			Do: do(func() tea.Cmd { return v.showJobSource(a) })},
-		Binding{Keys: []string{"V"}, Desc: "workflow", Help: "the run's whole workflow file", Do: do(func() tea.Cmd { return v.showWorkflowSource(a) })},
+		Binding{Keys: []string{"c"}, Desc: "workflow file", Help: "the YAML of the workflow, at the job under the cursor (v there shows the whole file)",
+			Do: do(func() tea.Cmd {
+				if v.selectedJob() == nil {
+					return v.showWorkflowSource(a)
+				}
+				return v.showJobSource(a)
+			})},
 		Binding{Keys: []string{"enter", "right", "left"}, Label: "enter", Desc: "open step log", Help: "open a step's log · fold a job",
 			Do: func(k string) tea.Cmd { return v.openOrFold(a, k) }},
 		Binding{Keys: []string{" "}, Label: "space", Desc: "fold", Help: "fold / unfold jobs and steps", Do: func(k string) tea.Cmd { return v.openOrFold(a, k) }},
 		Binding{Keys: []string{"e"}, Desc: "next error", Help: "jump to the next failed step", Do: do(func() tea.Cmd { return v.nextError(a) })},
-		Binding{Keys: []string{"t"}, Desc: "compare", Help: "compare durations: off, with the median of earlier runs, or with the previous run",
+		Binding{Keys: []string{"t"}, Desc: timesDesc(a), Help: "compare each duration with the usual one (the median of earlier runs), with the previous run, or not at all",
 			Do: do(func() tea.Cmd { return v.toggleTypical(a) })},
-		Binding{Keys: []string{"[", "]"}, Label: "[ ]", Desc: "attempt", Help: "previous / next attempt of a rerun", Off: v.run.RunAttempt <= 1,
-			Do: func(k string) tea.Cmd { return v.stepAttempt(a, map[string]int{"[": -1, "]": 1}[k]) }},
-		Binding{Keys: []string{"="}, Desc: "since it passed", Help: "what changed since the workflow last passed on this branch",
+		Binding{Keys: []string{"d"}, Desc: v.diffDesc(), Help: "what differs from the last run of this workflow that passed on this branch: its commits, moved tags and runner image",
 			Off: StatusKind(v.run.Status, v.run.Conclusion) != KFail,
 			Do:  do(func() tea.Cmd { return a.push(newSinceGreenView(a, v.repo, v.run)) })},
+		Binding{Help: "previous attempt of the rerun", Off: v.run.RunAttempt <= 1 || v.shownRun().RunAttempt <= 1,
+			Do: do(func() tea.Cmd { return v.stepAttempt(a, -1) })},
+		Binding{Help: "next attempt of the rerun", Off: v.run.RunAttempt <= 1 || v.shownRun().RunAttempt >= v.run.RunAttempt,
+			Do: do(func() tea.Cmd { return v.stepAttempt(a, 1) })},
 	)
 	if other := v.concurrencyRun(); other != nil {
 		r := *other
-		bs = append(bs, Binding{Keys: []string{"g"}, Desc: fmt.Sprintf("open #%d", r.RunNumber), Help: "the run of the same concurrency group that took its place, or that it waits for",
+		bs = append(bs, Binding{Help: fmt.Sprintf("open #%d: the run of the same concurrency group that took its place, or that it waits for", r.RunNumber),
 			Do: do(func() tea.Cmd { return a.push(newRunView(a, v.repo, r)) })})
 	}
 	if v.graph {
 		bs = append(bs, follow)
 	}
 	bs = append(bs,
-		Binding{Keys: []string{"l"}, Desc: "logs", Help: "logs of the run, job or step", Do: do(func() tea.Cmd { return v.openLogs(a) })},
+		Binding{Keys: []string{"l"}, Desc: "logs", Help: "the log of the run, job or step under the cursor", Do: do(func() tea.Cmd { return v.openLogs(a) })},
 		a.runRepoKey(v.repo, v.run),
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the run, or the job under the cursor, on GitHub", Do: do(func() tea.Cmd {
 			if job := v.selectedJob(); job != nil {
 				if it, _ := v.selected(); it.kind != tGroup {
 					return a.openURL(job.HTMLURL)
@@ -638,6 +647,9 @@ func (v *runView) Keys(a *App) []Binding {
 	)
 	for _, b := range a.runKeys(v.repo, v.run) {
 		if len(b.Keys) == 0 {
+			if strings.HasPrefix(b.Help, "Download artifacts") {
+				continue // the screen has its own, with the artifacts it read
+			}
 			b.Do = do(func() tea.Cmd { return a.pickJobToRerun(v.repo, v.shownRun(), v.jobs, false) })
 			bs = append(bs, b)
 			continue
@@ -645,15 +657,13 @@ func (v *runView) Keys(a *App) []Binding {
 		switch b.Keys[0] {
 		case "R":
 			b.Do = do(func() tea.Cmd { return a.rerunPicker(v.repo, v.shownRun(), v.jobs, v.selectedJob()) })
-		case "y":
-			b.Desc = "copy URL"
 		}
 		bs = append(bs, b)
 	}
-	bs = append(bs, a.downloadArtifactsKey(v.repo, v.run, v.arts, []string{"A"}))
+	bs = append(bs, a.downloadArtifactsKey(v.repo, v.run, v.arts, nil))
 	bs = append(bs, moveBinding("", func(k string) tea.Cmd { return v.move(a, k) }))
 	if !v.graph {
-		bs = prioritise(bs, "f", "a", "enter", "l", "R", "=", "s", "g", "c", "e", "p")
+		bs = prioritise(bs, "f", "A", "enter", "l", "R", "d", "X", "r", "e", "p")
 	}
 	return grouped("A RUN", bs...)
 }
@@ -671,9 +681,9 @@ func (v *runView) move(a *App, k string) tea.Cmd {
 		v.cursor = max(v.cursor-10, 0)
 	case "pgdown", "ctrl+f":
 		v.cursor = min(v.cursor+10, last)
-	case "home", "g":
+	case "home":
 		v.cursor = 0
-	case "end", "G":
+	case "end":
 		v.cursor = last
 	}
 	return v.ensure(a)
@@ -744,4 +754,24 @@ func (v *runView) nextError(a *App) tea.Cmd {
 		return v.ensure(a)
 	}
 	return a.flashCmd(nHint, "No failed steps in this run.")
+}
+
+// timesDesc says how durations are compared now; t moves to the next way.
+func timesDesc(a *App) string {
+	switch a.cfg.CompareDurations {
+	case config.CompareMedian:
+		return "times vs usual"
+	case config.ComparePrevious:
+		return "times vs previous"
+	}
+	return "plain times"
+}
+
+// diffDesc names the run the d key compares with: the previous run that
+// passed, when it ran on the same branch, else the last one that passed.
+func (v *runView) diffDesc() string {
+	if p := v.previous; p != nil && p.HeadBranch == v.run.HeadBranch {
+		return fmt.Sprintf("diff vs #%d ✓", p.RunNumber)
+	}
+	return "diff vs last pass"
 }

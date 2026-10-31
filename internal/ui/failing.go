@@ -576,7 +576,7 @@ func (v *failingView) keys(a *App) []Binding {
 				Do: do(func() tea.Cmd { v.fold(); return nil })}
 		}
 		bs = append(bs, open,
-			Binding{Keys: []string{"l"}, Desc: "log", Do: do(func() tea.Cmd { return a.push(newLogView(a, run.repo, run.run, nil, 0)) })})
+			Binding{Keys: []string{"l"}, Desc: "logs", Help: "the log of the run", Do: do(func() tea.Cmd { return a.push(newLogView(a, run.repo, run.run, nil, 0)) })})
 		if x == nil && len(g.runs) > 1 {
 			bs = append(bs, Binding{Keys: []string{"R"}, Desc: fmt.Sprintf("rerun all %d", len(g.runs)), Help: "rerun the failed jobs of every run with this cause",
 				Mutates: true, Need: gh.CapWrite, Do: do(func() tea.Cmd { return a.rerunFailedOf(g.runs, v.t.ClearMarks) })})
@@ -587,12 +587,12 @@ func (v *failingView) keys(a *App) []Binding {
 			bs = append(bs, a.runRepoKey(run.repo, run.run))
 		} else if common := g.commonWorkflows(); len(common) > 0 {
 			src := common[0]
-			bs = append(bs, Binding{Keys: []string{"s"}, Desc: "shared workflow", Help: "open the repo of the reusable workflow every run called",
+			bs = append(bs, Binding{Keys: []string{"r"}, Desc: "shared workflow repo", Help: "open the repo of the reusable workflow every run called",
 				Do: do(func() tea.Cmd {
 					return a.push(newRepoView(a, gh.Use{Target: strings.SplitN(src, "@", 2)[0]}.TargetRepo(), ""))
 				})})
 		}
-		bs = append(bs, Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the run in the browser", Do: do(func() tea.Cmd { return a.openURL(run.run.HTMLURL) })})
+		bs = append(bs, Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the run in the browser", Do: do(func() tea.Cmd { return a.openURL(run.run.HTMLURL) })})
 	}
 	if v.flat {
 		return append(bs, groupKey(&v.flat, v.t, v.list))
@@ -713,11 +713,11 @@ func (v *failingView) panel(a *App, w, h int) []string {
 	}
 	switch yours := a.yourWorkflows(common); {
 	case len(yours) > 0 && g.repos() > 1:
-		p.callout(cWait, "Likely in your workflow: the same step fails in every repo that calls "+pathBase(strings.SplitN(yours[0], "@", 2)[0])+".", keycap("s")+sText.Render(" open it"))
+		p.callout(cWait, "Likely in your workflow: the same step fails in every repo that calls "+pathBase(strings.SplitN(yours[0], "@", 2)[0])+".", keycap("r")+sText.Render(" open its repo"))
 	case g.repos() > 1:
 		p.callout(cWait, fmt.Sprintf("The same failure in %d repos, with different commits: likely not their code.", g.repos()), keycap("R")+sText.Render(" rerun them all")+"  "+keycap("enter")+sText.Render(" open the newest"))
 	default:
-		p.callout(cRed, "Only this repo fails this way.", keycap("enter")+sText.Render(" open the run")+"  "+keycap("l")+sText.Render(" log"))
+		p.callout(cRed, "Only this repo fails this way.", keycap("enter")+sText.Render(" open the run")+"  "+keycap("l")+sText.Render(" logs"))
 	}
 
 	p.label("Runs")

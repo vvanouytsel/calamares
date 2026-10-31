@@ -90,6 +90,10 @@ Calamares is a terminal command center for GitHub, written in Go with Bubble Tea
 
 - A screen lists its keys once as bindings (`Keys`); the key bar, the help and the read-only check
   come from that list. Don't add a separate hint list.
+- A key means one thing on every screen, as `keyMap` in `internal/ui/keys.go` says: a new key gets
+  its meaning there first, and a screen with no use for a key leaves it unused. Lowercase keys only
+  look, go somewhere, copy, sort or filter; a key that changes GitHub is a capital (or a symbol) and
+  asks first. `TestEveryKeyHasOneMeaning` checks both. Rare actions get no key: the `.` menu has them.
 - Make every change on its own branch off `main`, never on `main` itself. Create the branch before
   the first edit.
 - Commit messages follow Conventional Commits; `feat:` and `fix:` on `main` publish a release.

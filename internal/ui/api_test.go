@@ -274,7 +274,7 @@ func TestFollowingARunKeepsTheCursorOnTheRunningStep(t *testing.T) {
 	v.jobsLoaded = true
 	v.jobs = []gh.Job{{ID: 1, Name: "build", Status: "in_progress", Steps: steps(1)}}
 	v.rebuild()
-	v.key(a, "f")
+	v.followRunning(a)
 	if !v.follow || v.items[v.cursor].kind != tStep || v.items[v.cursor].step != 1 {
 		t.Fatalf("follow should select the running step, follow=%v cursor=%d", v.follow, v.cursor)
 	}
@@ -299,9 +299,9 @@ func TestRunViewStepsThroughTheAttemptsOfARun(t *testing.T) {
 	run.RunAttempt = 3
 	v := newRunView(a, "o/r", run)
 	a.stack = append(a.stack, v)
-	drive(a, v.key(a, "["), 5*time.Second)
+	drive(a, byHelp(t, a, v.Keys(a), "previous attempt"), 5*time.Second)
 	if v.attempt != 2 || len(v.jobs) != 1 || v.jobs[0].ID != 22 {
-		t.Fatalf("[ should show attempt 2 with its jobs, attempt=%d jobs=%v", v.attempt, v.jobs)
+		t.Fatalf("previous attempt should show attempt 2 with its jobs, attempt=%d jobs=%v", v.attempt, v.jobs)
 	}
 	if fake.count("/repos/o/r/actions/runs/7/attempts/2/jobs") != 1 {
 		t.Errorf("the jobs of attempt 2 were not requested")
@@ -309,9 +309,9 @@ func TestRunViewStepsThroughTheAttemptsOfARun(t *testing.T) {
 	if got := v.shownRun(); got.Conclusion != "failure" {
 		t.Errorf("the header should describe attempt 2, got conclusion %q", got.Conclusion)
 	}
-	v.key(a, "]")
+	drive(a, byHelp(t, a, v.Keys(a), "next attempt"), time.Second)
 	if v.attempt != 0 {
-		t.Errorf("] on the second of three attempts should return to the latest, attempt = %d", v.attempt)
+		t.Errorf("next attempt on the second of three attempts should return to the latest, attempt = %d", v.attempt)
 	}
 }
 

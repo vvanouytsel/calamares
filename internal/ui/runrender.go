@@ -531,7 +531,7 @@ func (v *runView) whyBox(a *App, job gh.Job, w int) string {
 	if len(lines) == 0 {
 		return ""
 	}
-	lines = append(lines, keycap("=")+sDim.Render(" what changed since it last passed"))
+	lines = append(lines, keycap("d")+sDim.Render(" diff with the last run that passed"))
 	body := make([]string, len(lines))
 	for i, l := range lines {
 		body[i] = " " + l

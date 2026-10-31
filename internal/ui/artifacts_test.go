@@ -39,9 +39,9 @@ func TestARunShowsItsArtifactsAndDownloadsOne(t *testing.T) {
 			t.Errorf("the run lacks %q:\n%s", want, out)
 		}
 	}
-	pressKeys(a, runes("A"))
+	drive(a, byHelp(t, a, v.Keys(a), "download artifacts"), time.Second)
 	if _, ok := a.modal.(*pickerModal); !ok {
-		t.Fatalf("A should pick an artifact, modal is %T", a.modal)
+		t.Fatalf("download artifacts should pick an artifact, modal is %T", a.modal)
 	}
 	pressKeys(a, tea.KeyMsg{Type: tea.KeyEnter}, runes("y"))
 	deadline := time.Now().Add(3 * time.Second)

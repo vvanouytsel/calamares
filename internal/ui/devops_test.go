@@ -95,8 +95,8 @@ func TestAWarningOpensToTheRunsThatGaveIt(t *testing.T) {
 	out = ansi.Strip(v.Render(a, 170, 40))
 	wantAll(t, out, "├─", "api  CI #1", "'name'", "└─", "web  CI #2", "'token'")
 	v.Update(a, tea.KeyMsg{Type: tea.KeyDown})
-	if bar := barOf(a, v.Keys(a)); !strings.Contains(bar, " s ") || !strings.Contains(bar, " enter ") {
-		t.Errorf("on a run, enter opens it and s its repo: %s", bar)
+	if bar := barOf(a, v.Keys(a)); !strings.Contains(bar, " r ") || !strings.Contains(bar, " enter ") {
+		t.Errorf("on a run, enter opens it and r its repo: %s", bar)
 	}
 	v.Update(a, runes("g"))
 	v.sync(a)
@@ -122,10 +122,10 @@ func TestARunOpensItsRepoAtItsWorkflow(t *testing.T) {
 	v := newRunView(a, "o/r", gh.Run{ID: 7, Name: "CI", WorkflowID: 5, Status: "completed", Conclusion: "success"})
 	v.loaded, v.jobsLoaded = true, true
 	drive(a, a.push(v), time.Second)
-	pressKeys(a, runes("s"))
+	pressKeys(a, runes("r"))
 	repo, ok := a.top().(*repoView)
 	if !ok || repo.repo != "o/r" || repo.wantWF != 5 {
-		t.Errorf("s should open o/r at workflow 5, top is %T", a.top())
+		t.Errorf("r should open o/r at workflow 5, top is %T", a.top())
 	}
 }
 
@@ -223,22 +223,22 @@ func TestTickedRunsAreRerunOrCancelledTogether(t *testing.T) {
 	a, v := activityApp(failed, running, activityRun(3, "completed", now.Add(-2*time.Hour)))
 	a.Update(tea.WindowSizeMsg{Width: 140, Height: 40})
 	v.rebuild(a, recentRuns(a, []string{"o/r"}), now)
-	v.Update(a, runes("*"))
+	v.Update(a, tea.KeyMsg{Type: tea.KeyCtrlA})
 	bar := barOf(a, v.Keys(a))
-	if !strings.Contains(bar, " R ") || !strings.Contains(bar, " c ") {
-		t.Fatalf("with runs ticked, R and c act on them: %s", bar)
+	if !strings.Contains(bar, " R ") || !strings.Contains(bar, " X ") {
+		t.Fatalf("with runs ticked, R and X act on them: %s", bar)
 	}
 	var rerun, cancel string
 	for _, b := range v.Keys(a) {
 		switch {
 		case len(b.Keys) > 0 && b.Keys[0] == "R" && rerun == "":
 			rerun = b.Desc
-		case len(b.Keys) > 0 && b.Keys[0] == "c" && cancel == "":
+		case len(b.Keys) > 0 && b.Keys[0] == "X" && cancel == "":
 			cancel = b.Desc
 		}
 	}
 	if rerun != "rerun failed (1)" || cancel != "cancel (1)" {
-		t.Errorf("R = %q, c = %q: one failed and one running run are ticked", rerun, cancel)
+		t.Errorf("R = %q, X = %q: one failed and one running run are ticked", rerun, cancel)
 	}
 	if !strings.Contains(ansi.Strip(v.Render(a, 140, 30)), "3 ticked") {
 		t.Errorf("the line above the list should say how many are ticked")
@@ -318,8 +318,12 @@ func TestACancelledRunNamesItsConcurrencyGroupAndTheRunThatReplacedIt(t *testing
 	v.concurrency = concurrencyNote{group: "deploy-refs/heads/main", replacedBy: &gh.Run{ID: 8, RunNumber: 129}}
 	out := ansi.Strip(v.Render(a, 140, 30))
 	wantAll(t, out, "Concurrency", "deploy-refs/heads/main", "#129")
-	if !strings.Contains(barOf(a, v.Keys(a)), " g ") {
-		t.Errorf("g should open the run that took its place")
+	found := false
+	for _, b := range v.Keys(a) {
+		found = found || strings.HasPrefix(b.Help, "open #129")
+	}
+	if !found {
+		t.Errorf("the menu should open the run that took its place")
 	}
 }
 

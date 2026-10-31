@@ -34,7 +34,7 @@ func TestActionMenuListsTheScreensKeysAndNarrowsAsYouType(t *testing.T) {
 		t.Fatalf("a . did not open the action menu, modal is %T", a.modal)
 	}
 	out := ansi.Strip(a.View())
-	for _, want := range []string{"Actions for", "rerun", "open in the browser"} {
+	for _, want := range []string{"Actions for", "rerun", "on GitHub"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("menu lacks %q:\n%s", want, out)
 		}

@@ -46,13 +46,13 @@ func (v *repoView) branchHint(a *App) string {
 			return ""
 		}
 	}
-	return fact("pr", "Your branch "+a.opts.Branch+" has no pull request") + sDim.Render(" · ") + keycap("P") + sDim.Render(" create")
+	return fact("pr", "Your branch "+a.opts.Branch+" has no pull request") + sDim.Render(" · ") + keycap("+") + sDim.Render(" create")
 }
 
 // newPRKey is the key that opens a pull request for your branch.
 func (a *App) newPRKey(repo string) Binding {
 	here := a.inCheckout(repo) && a.opts.Branch != ""
-	return Binding{Keys: []string{"P"}, Desc: "new PR", Help: "open a pull request for the branch you are on", Mutates: true, Need: gh.CapComment, Repo: repo,
+	return Binding{Keys: []string{"+"}, Desc: "new pull request", Help: "open a pull request for the branch you are on", Mutates: true, Need: gh.CapComment, Repo: repo,
 		Locked: lockIf(here, "start Calamares inside a checkout of "+repo+", on a branch"),
 		Do:     do(func() tea.Cmd { return a.newPR(repo, a.opts.Branch, true) })}
 }

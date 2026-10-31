@@ -82,7 +82,7 @@ func (a *App) runPanel(x repoRun, w, h int) []string {
 	if k == KFail {
 		if _, cached := a.client.CachedJobs(x.repo, run.ID); cached {
 			p.add("")
-			p.add(keycap("enter") + sText.Render(" why it failed  ") + keycap("l") + sText.Render(" log"))
+			p.add(keycap("enter") + sText.Render(" why it failed  ") + keycap("l") + sText.Render(" logs"))
 		}
 	}
 	return p.render(h)

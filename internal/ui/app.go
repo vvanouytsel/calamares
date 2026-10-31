@@ -395,7 +395,7 @@ func (a *App) Init() tea.Cmd {
 	a.loadAside()
 	a.earnOnStart(time.Now())
 	a.earnSeen("tourist", tabNames[a.tab])
-	cmds := []tea.Cmd{tick(), a.anim(), a.loadUser(), a.syncRate(), a.pollWatches(), a.pollRepoWatches(), a.pollPRWatches(), a.pollActivity()}
+	cmds := []tea.Cmd{tick(), a.anim(), a.loadUser(), a.syncRate(), a.pollWatches(), a.pollRepoWatches(), a.pollPRWatches(), a.pollActivity(), a.keysNews()}
 	if len(a.stack) == 1 {
 		cmds = append(cmds, a.visit())
 	}

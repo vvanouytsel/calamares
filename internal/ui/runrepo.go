@@ -17,7 +17,7 @@ func (a *App) openRunRepo(repo string, run gh.Run) tea.Cmd {
 
 // runRepoKey is s on a run: the repo it belongs to.
 func (a *App) runRepoKey(repo string, run gh.Run) Binding {
-	return Binding{Keys: []string{"s"}, Desc: "repo", Help: "the repo of the run, at its workflow",
+	return Binding{Keys: []string{"r"}, Desc: "repo", Help: "open the repo of the run, at its workflow",
 		Do: do(func() tea.Cmd { return a.openRunRepo(repo, run) })}
 }
 

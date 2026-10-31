@@ -47,9 +47,16 @@ type Config struct {
 	// Achievements is "off" to hide the Achievements place, the level in the
 	// header and the cards for what you unlock; anything else shows them.
 	Achievements string `yaml:"achievements,omitempty"`
+	// KeysVersion is the version of the key map last told about; an older one
+	// gets a word on what moved.
+	KeysVersion int `yaml:"keysVersion,omitempty"`
 
 	path string
 }
+
+// CurrentKeys is the version of the key map. It goes up when keys move, so
+// people who knew the old ones are told once.
+const CurrentKeys = 2
 
 // AchievementsOn says the achievements are shown.
 func (c *Config) AchievementsOn() bool { return !strings.EqualFold(c.Achievements, "off") }
@@ -65,7 +72,7 @@ func (c *Config) Dir() string {
 
 // Default returns the built-in settings.
 func Default() *Config {
-	return &Config{Host: "github.com", RefreshSeconds: 3}
+	return &Config{Host: "github.com", RefreshSeconds: 3, KeysVersion: CurrentKeys}
 }
 
 // Path returns where the config file lives on this OS:
@@ -98,6 +105,7 @@ func Load() (*Config, error) {
 	if err != nil {
 		return c, err
 	}
+	c.KeysVersion = 0 // a file without it was written before the keys moved
 	if err := yaml.Unmarshal(b, c); err != nil {
 		return c, err
 	}
@@ -180,6 +188,7 @@ func (c *Config) Save() error {
 	disk.CompareDurations, disk.TypicalDurations = c.CompareDurations, false
 	disk.Theme = c.Theme
 	disk.WatchedRepos = c.WatchedRepos
+	disk.KeysVersion = c.KeysVersion
 	b, err := yaml.Marshal(disk)
 	if err != nil {
 		return err

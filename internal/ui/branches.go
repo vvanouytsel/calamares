@@ -156,17 +156,17 @@ func (v *branchesView) Keys(a *App) []Binding {
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "compare", Help: "compare with the default branch",
 				Off: b.Default, Do: do(func() tea.Cmd { return a.push(newCompareView(a, v.repo, v.defaultBranch(a), b.Name)) })},
-			Binding{Keys: []string{"P"}, Desc: "new PR", Help: "open a pull request from this branch", Off: b.Default || (b.PR != nil && b.PR.State == "OPEN"),
+			Binding{Keys: []string{"+"}, Desc: "new pull request", Help: "open a pull request from this branch", Off: b.Default || (b.PR != nil && b.PR.State == "OPEN"),
 				Mutates: true, Need: gh.CapComment, Repo: v.repo, Do: do(func() tea.Cmd { return a.newPR(v.repo, b.Name, a.inCheckout(v.repo) && a.opts.Branch == b.Name) })},
-			Binding{Keys: []string{"X"}, Desc: "delete", Help: "delete the branch", Off: delReason != "", Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+			Binding{Keys: []string{"X"}, Desc: "delete branch", Help: "delete the branch", Off: delReason != "", Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 				Do: do(func() tea.Cmd {
 					if delReason != "" {
 						return a.flashCmd(nHint, "Can't delete it: "+delReason+".")
 					}
 					return a.deleteBranches(v.repo, []gh.Branch{b})
 				})},
-			Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(v.repo + "/tree/" + b.Name)) })},
-			Binding{Keys: []string{"y"}, Help: "copy the branch name", Do: do(func() tea.Cmd { return a.copyText(b.Name, "branch name") })},
+			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(v.repo + "/tree/" + b.Name)) })},
+			Binding{Keys: []string{"y"}, Desc: "copy name", Help: "copy the branch name", Do: do(func() tea.Cmd { return a.copyText(b.Name, "branch name") })},
 		)
 	}
 	if m := v.merged(); len(m) > 0 {
@@ -321,7 +321,7 @@ func (v *branchesView) panel(a *App, w, h int) []string {
 	p.label("Pull request")
 	switch {
 	case b.PR == nil && !b.Default:
-		p.add(sDim.Render("none yet · ") + keycap("P") + sDim.Render(" opens one"))
+		p.add(sDim.Render("none yet · ") + keycap("+") + sDim.Render(" opens one"))
 	case b.PR != nil:
 		p.add(prChip(b.PR).Styled)
 	default:

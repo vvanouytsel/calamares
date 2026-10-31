@@ -113,10 +113,10 @@ func TestCloseIsLockedWhenGitHubSaysYouCannot(t *testing.T) {
 func TestANewIssueIsCreatedFromTheForm(t *testing.T) {
 	a, rec := issuesApp(t, "WRITE")
 	rec.next.(*countingGitHub).bodies["/repos/acme/webshop/issues"] = `{"number":23}`
-	pressKeys(a, runes("n"))
+	pressKeys(a, runes("+"))
 	f, ok := a.modal.(*formModal)
 	if !ok {
-		t.Fatalf("n should open the form, modal is %T", a.modal)
+		t.Fatalf("+ should open the form, modal is %T", a.modal)
 	}
 	pressKeys(a, runes("Broken"), tea.KeyMsg{Type: tea.KeyCtrlS})
 	if !strings.Contains(f.err, "required") && a.modal != nil {
@@ -129,7 +129,7 @@ func TestANewIssueIsCreatedFromTheForm(t *testing.T) {
 
 func TestFormRefusesToSendWithoutATitle(t *testing.T) {
 	a, _ := issuesApp(t, "WRITE")
-	pressKeys(a, runes("n"), tea.KeyMsg{Type: tea.KeyCtrlS})
+	pressKeys(a, runes("+"), tea.KeyMsg{Type: tea.KeyCtrlS})
 	f, ok := a.modal.(*formModal)
 	if !ok || !strings.Contains(f.err, "Title is required") {
 		t.Errorf("the form should say a title is needed, modal %T", a.modal)

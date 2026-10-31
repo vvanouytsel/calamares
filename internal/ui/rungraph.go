@@ -132,10 +132,10 @@ func (v *runView) selectNodeAtCursor() {
 // graphKeys are the keys of the pipeline; they come before the job list's.
 func (v *runView) graphKeys(a *App) []Binding {
 	return grouped("THE PIPELINE",
-		Binding{Keys: []string{"up", "down", "left", "right", "k", "j", "h", "l"}, Label: "hjkl", Desc: "move", Help: "move along the jobs (the arrows too)",
+		Binding{Keys: []string{"up", "down", "left", "right", "k", "j"}, Label: "←↑↓→", Desc: "move", Help: "move along the jobs",
 			Do: func(k string) tea.Cmd { return v.graphMove(a, k) }},
 		Binding{Keys: []string{"enter"}, Desc: "logs", Help: "logs of the selected job", Do: do(func() tea.Cmd { return v.openLogs(a) })},
-		Binding{Keys: []string{"+", "=", "-", "_"}, Label: "+ −", Desc: "zoom", Help: "zoom in / out", Do: func(k string) tea.Cmd {
+		Binding{Keys: []string{"=", "-"}, Label: "= -", Desc: "zoom", Help: "zoom in / out", Do: func(k string) tea.Cmd {
 			if k == "+" || k == "=" {
 				return v.zoomBy(a, 1)
 			}
@@ -145,12 +145,12 @@ func (v *runView) graphKeys(a *App) []Binding {
 			v.g.zoom, v.g.center = zoomFit, true
 			return a.flashCmd(nInfo, "Zoom: fit to the screen")
 		})},
-		Binding{Keys: []string{"m"}, Desc: "matrices", Help: "how matrices show: framed legs, every leg, or one job", Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"z"}, Desc: "matrices", Help: "how matrices show: framed legs, every leg, or one job", Do: do(func() tea.Cmd {
 			v.g.matrices = (v.g.matrices + 1) % matrixModes
 			v.g.center = true
 			return a.flashCmd(nInfo, "Matrices: "+matrixModeNames[v.g.matrices]+" · m changes it")
 		})},
-		Binding{Keys: []string{"n"}, Desc: "runners", Help: "show the runner of each job", Do: do(func() tea.Cmd {
+		Binding{Help: "show the runner of each job", Do: do(func() tea.Cmd {
 			v.g.runners = !v.g.runners
 			if v.g.runners {
 				return a.flashCmd(nInfo, "Boxes show the runner of each job · n hides it")

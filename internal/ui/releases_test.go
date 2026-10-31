@@ -64,10 +64,10 @@ func TestANewReleaseProposesTheNextVersionAndCanGenerateNotes(t *testing.T) {
 	a, _, rec := releasesApp(t)
 	rec.next.(*countingGitHub).bodies["/repos/o/r/releases"] = `{"id":9}`
 	a.workflows["o/r"] = []gh.Workflow{{Name: "Release", Path: ".github/workflows/release.yml", State: "active"}}
-	pressKeys(a, runes("n"))
+	pressKeys(a, runes("+"))
 	f, ok := a.modal.(*formModal)
 	if !ok {
-		t.Fatalf("n should open the form, modal is %T", a.modal)
+		t.Fatalf("+ should open the form, modal is %T", a.modal)
 	}
 	if f.field("Tag").value() != "v2.16.0" {
 		t.Errorf("the likely next version is the minor one, got %q", f.field("Tag").value())

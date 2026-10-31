@@ -278,7 +278,7 @@ func (c *conversation) keys(a *App, v *prView) []Binding {
 	bs := []Binding{c.list.moveKeys("move")}
 	item, ok := c.list.selectedItem()
 	ref, _ := item.data.(itemRef)
-	reply := Binding{Keys: []string{"r", "enter"}, Label: "r", Desc: "reply", Help: "reply to the selected comment", Off: !ok, Mutates: true, Need: gh.CapComment, Repo: v.repo,
+	reply := Binding{Keys: []string{"W", "enter"}, Label: "W", Desc: "reply", Help: "reply to the selected comment", Off: !ok, Mutates: true, Need: gh.CapComment, Repo: v.repo,
 		Do: do(func() tea.Cmd { return v.reply(a, ref) })}
 	if !ok {
 		reply.Do = nil
@@ -294,7 +294,7 @@ func (c *conversation) keys(a *App, v *prView) []Binding {
 		if c.unfolded[item.id] {
 			desc = "fold details"
 		}
-		bs = append(bs, Binding{Keys: []string{"e"}, Desc: desc, Help: "open or close the folded parts (<details>) of the selected comment",
+		bs = append(bs, Binding{Keys: []string{"v"}, Desc: desc, Help: "open or close the folded parts (<details>) of the selected comment",
 			Do: do(func() tea.Cmd {
 				if c.unfolded == nil {
 					c.unfolded = map[string]bool{}

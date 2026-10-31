@@ -38,7 +38,7 @@ func newCommitsView(a *App, repo, branch string) *commitsView {
 	v := &commitsView{id: a.newID(), repo: repo, branch: branch, page: 1}
 	v.t = newTable(
 		Column{Title: "COMMIT", Help: "the short SHA of the commit"},
-		Column{Title: "MESSAGE", Max: 80, Flex: true, Below: true, Help: "the first line of its message; m shows all of it"},
+		Column{Title: "MESSAGE", Max: 80, Flex: true, Below: true, Help: "the first line of its message; v shows all of it"},
 		Column{Title: "AUTHOR", Max: 20, Flex: true, Drop: 2, Help: "who wrote it"},
 		Column{Title: "AGE", Right: true, Min: 3},
 	)
@@ -168,9 +168,9 @@ func (v *commitsView) Keys(a *App) []Binding {
 	if c, ok := v.selected(); ok {
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "runs and changes", Do: do(func() tea.Cmd { return a.push(newCommitView(a, v.repo, c)) })},
-			Binding{Keys: []string{"m"}, Desc: "full message", Do: do(func() tea.Cmd { return commitMessage(c) })},
-			Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(c.URL) })},
-			Binding{Keys: []string{"y"}, Desc: "copy sha", Do: do(func() tea.Cmd { return a.copyText(c.SHA, "commit SHA") })},
+			Binding{Keys: []string{"v"}, Desc: "whole message", Help: "the whole commit message", Do: do(func() tea.Cmd { return commitMessage(c) })},
+			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(c.URL) })},
+			Binding{Keys: []string{"y"}, Desc: "copy sha", Help: "copy the commit sha", Do: do(func() tea.Cmd { return a.copyText(c.SHA, "commit SHA") })},
 		)
 	}
 	bs = append(bs,

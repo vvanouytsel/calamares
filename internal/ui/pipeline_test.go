@@ -107,9 +107,9 @@ func TestPipelineZoomAndFullScreenKeys(t *testing.T) {
 	v.key(a, "p")
 	_ = a.View()
 	v.g.zoom, v.g.zoomNow = zoomBoxes, zoomBoxes
-	v.key(a, "+")
+	v.key(a, "=")
 	if v.g.zoom != zoomDetail || !strings.Contains(ansi.Strip(a.View()), "compile") {
-		t.Errorf("+ should show the step each job is on:\n%s", ansi.Strip(a.View()))
+		t.Errorf("= should show the step each job is on:\n%s", ansi.Strip(a.View()))
 	}
 	v.key(a, "-")
 	v.key(a, "-")
@@ -134,15 +134,17 @@ func graphApp(t *testing.T) (*App, *runView) {
 	return a, v
 }
 
-func TestInThePipelineLMovesRightInsteadOfOpeningLogs(t *testing.T) {
+func TestInThePipelineTheArrowsMoveAndLOpensTheLogs(t *testing.T) {
 	a, v := graphApp(t)
 	v.g.sel = "build"
-	v.key(a, "l")
-	if _, isLog := a.top().(*logView); isLog {
-		t.Fatalf("l opened the logs; in the pipeline it moves right")
-	}
+	v.key(a, "right")
 	if v.g.sel == "build" {
-		t.Errorf("l should move the cursor to the right")
+		t.Errorf("right should move the cursor to the right")
+	}
+	v.g.sel = "build"
+	v.key(a, "l")
+	if _, isLog := a.top().(*logView); !isLog {
+		t.Errorf("l means logs everywhere, in the pipeline too; top is %T", a.top())
 	}
 }
 
@@ -182,7 +184,7 @@ func sourceApp(t *testing.T) (*App, *runView) {
 	return a, v
 }
 
-func TestVShowsTheYAMLThatDefinesTheSelectedJob(t *testing.T) {
+func TestCShowsTheYAMLThatDefinesTheSelectedJob(t *testing.T) {
 	a, v := sourceApp(t)
 	v.cursor = 0
 	for i, it := range v.items {
@@ -190,26 +192,28 @@ func TestVShowsTheYAMLThatDefinesTheSelectedJob(t *testing.T) {
 			v.cursor = i
 		}
 	}
-	drive(a, v.key(a, "v"), 5*time.Second)
+	drive(a, v.key(a, "c"), 5*time.Second)
 	pv, ok := a.top().(*pagerView)
 	if !ok {
-		t.Fatalf("v should open the job's YAML, top is %T", a.top())
+		t.Fatalf("c should open the job's YAML, top is %T", a.top())
 	}
 	out := ansi.Strip(a.View())
 	if !strings.Contains(out, "./deploy.sh") || strings.Contains(out, "make") || !strings.Contains(out, "@ 0123456") {
 		t.Errorf("only the deploy job should show, from the file at the run's commit:\n%s", out)
 	}
-	pv.Update(a, runes("a"))
+	pv.Update(a, runes("v"))
 	if out := ansi.Strip(a.View()); !strings.Contains(out, "make") || !strings.Contains(out, "▌") {
-		t.Errorf("a should show the whole file with the job marked:\n%s", out)
+		t.Errorf("v should show the whole file with the job marked:\n%s", out)
 	}
 }
 
-func TestShiftVShowsTheWholeWorkflowOfTheRun(t *testing.T) {
+func TestCWithoutAJobShowsTheWholeWorkflowOfTheRun(t *testing.T) {
 	a, v := sourceApp(t)
-	drive(a, v.key(a, "V"), 5*time.Second)
+	v.jobs = nil
+	v.rebuild()
+	drive(a, v.key(a, "c"), 5*time.Second)
 	if out := ansi.Strip(a.View()); !strings.Contains(out, "name: CI") || !strings.Contains(out, "./deploy.sh") {
-		t.Errorf("V should show the whole workflow file:\n%s", out)
+		t.Errorf("c without a job under the cursor should show the whole workflow file:\n%s", out)
 	}
 }
 

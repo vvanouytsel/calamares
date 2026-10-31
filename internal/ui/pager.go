@@ -70,7 +70,7 @@ func (v *pagerView) Keys(a *App) []Binding {
 	scroll.Keys = append(append([]string{}, scroll.Keys...), " ")
 	bs := []Binding{scroll}
 	if v.from > 0 {
-		bs = append(bs, Binding{Keys: []string{"a"}, Desc: map[bool]string{true: "whole file", false: "only this job"}[v.jobOnly],
+		bs = append(bs, Binding{Keys: []string{"v"}, Desc: map[bool]string{true: "whole file", false: "only this job"}[v.jobOnly],
 			Help: "whole file / only this job", Do: do(func() tea.Cmd {
 				v.jobOnly = !v.jobOnly
 				v.offset = 0
@@ -82,12 +82,12 @@ func (v *pagerView) Keys(a *App) []Binding {
 			})})
 	}
 	if v.wf != nil {
-		bs = append(bs, Binding{Keys: []string{"d"}, Desc: "run workflow", Help: "run the workflow", Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+		bs = append(bs, Binding{Keys: []string{"+"}, Desc: "run workflow", Help: "start a new run of the workflow", Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 			Do: do(func() tea.Cmd { return a.startDispatch(v.repo, *v.wf) })})
 	}
 	bs = append(bs,
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(v.webURL(a)) })},
-		Binding{Keys: []string{"y"}, Desc: "copy", Help: "copy the YAML on display", Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(v.webURL(a)) })},
+		Binding{Keys: []string{"y"}, Desc: "copy yaml", Help: "copy the YAML on display", Do: do(func() tea.Cmd {
 			if v.lines == nil {
 				return nil
 			}
@@ -111,9 +111,9 @@ func (v *pagerView) scroll(k string) {
 		v.offset -= page
 	case "pgdown", "ctrl+f", " ":
 		v.offset += page
-	case "home", "g":
+	case "home":
 		v.offset = 0
-	case "end", "G":
+	case "end":
 		v.offset = last
 	}
 	v.clamp()

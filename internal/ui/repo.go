@@ -572,14 +572,14 @@ func (v *repoView) sectionKeys(a *App) []Binding {
 		enableDesc = "enable"
 	}
 	workflow := grouped("A WORKFLOW",
-		Binding{Keys: []string{"d"}, Desc: bar("run workflow"), Help: "run the workflow", Off: !hasFile, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+		Binding{Keys: []string{"+"}, Desc: bar("run workflow"), Help: "start a new run of the workflow", Off: !hasFile, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 			Do: do(func() tea.Cmd {
 				if wf == nil {
-					return a.flashCmd(nHint, "Pick a workflow on the left first, then press d.")
+					return a.flashCmd(nHint, "Pick a workflow on the left first, then press +.")
 				}
 				return a.startDispatch(v.repo, *wf)
 			})},
-		Binding{Keys: []string{"v"}, Desc: bar("yaml"), Help: "the workflow's YAML", Off: !hasFile, Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"c"}, Desc: bar("workflow file"), Help: "the YAML of the workflow", Off: !hasFile, Do: do(func() tea.Cmd {
 			if !hasFile {
 				return a.flashCmd(nHint, "Pick a workflow with a YAML file on the left first.")
 			}
@@ -591,7 +591,7 @@ func (v *repoView) sectionKeys(a *App) []Binding {
 	pin.Group = "A REPO"
 
 	if !onWorkflows {
-		bs := append(p.Keys(a), Binding{Keys: []string{"left", "h"}, Label: "←", Desc: "workflows", Group: "A REPO",
+		bs := append(p.Keys(a), Binding{Keys: []string{"left"}, Label: "←", Desc: "workflows", Group: "A REPO",
 			Do: do(func() tea.Cmd { v.focus = paneWorkflows; return nil })})
 		pin.Desc = ""
 		return append(append(bs, workflow...), pin, tab)
@@ -603,14 +603,14 @@ func (v *repoView) sectionKeys(a *App) []Binding {
 				return v.selectWF(a, v.sel-1)
 			case "down", "j":
 				return v.selectWF(a, v.sel+1)
-			case "home", "g":
+			case "home":
 				return v.selectWF(a, 0)
-			case "end", "G":
+			case "end":
 				return v.selectWF(a, len(v.wfs))
 			}
 			return nil
 		}),
-		{Keys: []string{"right", "enter", "l"}, Label: "→", Desc: "its runs", Do: do(func() tea.Cmd { v.focus = paneRuns; return nil })},
+		{Keys: []string{"right", "enter"}, Label: "→", Desc: "its runs", Do: do(func() tea.Cmd { v.focus = paneRuns; return nil })},
 	}
 	bs = append(bs, only(p.Keys(a), "b", "s", "z")...)
 	bs = append(bs, workflow...)
@@ -1063,7 +1063,7 @@ func (v *repoView) renderPreview(a *App, p *runsView, w, h int) string {
 		}
 	}
 	if k == KFail && cached {
-		lines = append(lines, "", " "+keycap("enter")+sGrey.Render(" why it failed  ")+keycap("l")+sGrey.Render(" log"))
+		lines = append(lines, "", " "+keycap("enter")+sGrey.Render(" why it failed  ")+keycap("l")+sGrey.Render(" logs"))
 	}
 	return box(title(fmt.Sprintf("%s #%d", run.Name, run.RunNumber), "", -1, ""), strings.Join(lines, "\n"), w, h, cFrameDim)
 }

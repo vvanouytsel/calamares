@@ -147,25 +147,25 @@ func (v *releasesView) Keys(a *App) []Binding {
 	var bs []Binding
 	if r, ok := v.selected(); ok {
 		bs = append(bs,
-			Binding{Keys: []string{"P"}, Desc: "publish", Help: "publish the draft", Off: !r.Draft, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+			Binding{Keys: []string{"P"}, Desc: "publish", Help: "publish the draft release", Off: !r.Draft, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 				Do: do(func() tea.Cmd {
 					return confirm("Publish the release?", []string{sWhite.Render(r.Tag) + sDim.Render(" · "+r.Name), "", "Everyone who can see the repo will see it."}, "Publish", false, func() tea.Cmd {
 						return a.act(v.repo, "Published "+r.Tag, func(ctx context.Context) error { return a.client.PublishRelease(ctx, v.repo, r.ID) })
 					})
 				})},
-			Binding{Keys: []string{"X"}, Desc: "delete", Help: "delete the draft", Off: !r.Draft, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+			Binding{Keys: []string{"X"}, Desc: "delete draft", Help: "delete the draft release", Off: !r.Draft, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 				Do: do(func() tea.Cmd {
 					return confirm("Delete the draft?", []string{sWhite.Render(r.Tag) + sDim.Render(" · "+r.Name), "", "The draft is gone for good."}, "Delete", true, func() tea.Cmd {
 						return a.act(v.repo, "Deleted the draft "+r.Tag, func(ctx context.Context) error { return a.client.DeleteRelease(ctx, v.repo, r.ID) })
 					})
 				})},
-			Binding{Keys: []string{"A"}, Desc: "assets", Help: "download an asset", Off: len(r.Assets) == 0, Need: gh.CapRead, Repo: v.repo,
+			Binding{Help: "download an asset…", Off: len(r.Assets) == 0, Need: gh.CapRead, Repo: v.repo,
 				Do: do(func() tea.Cmd { return v.downloadAsset(a, r) })},
-			Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(r.URL) })},
-			Binding{Keys: []string{"y"}, Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(r.URL, "release link") })},
+			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(r.URL) })},
+			Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(r.URL, "release link") })},
 		)
 	}
-	bs = append(bs, Binding{Keys: []string{"n"}, Desc: "new release", Mutates: true, Need: gh.CapWrite, Repo: v.repo, Do: do(func() tea.Cmd { return a.newRelease(v) })})
+	bs = append(bs, Binding{Keys: []string{"+"}, Desc: "new release", Help: "write a new release", Mutates: true, Need: gh.CapWrite, Repo: v.repo, Do: do(func() tea.Cmd { return a.newRelease(v) })})
 	bs = append(bs, filterHint, v.t.moveKeys())
 	return grouped("RELEASES", bs...)
 }

@@ -120,9 +120,9 @@ func TestChangesTabListsFilesAndShowsTheDiffWithItsComments(t *testing.T) {
 func TestCommentingOnALinePostsItToThatLineOfTheLatestCommit(t *testing.T) {
 	a, _, rec := reviewedPRApp(t)
 	rec.next.(*countingGitHub).bodies["/repos/o/r/pulls/12/comments"] = "{}"
-	pressKeys(a, tea.KeyMsg{Type: tea.KeyTab}, runes("j"), runes("l"), runes("j"), runes("j"), runes("j"), runes("c"))
+	pressKeys(a, tea.KeyMsg{Type: tea.KeyTab}, runes("j"), tea.KeyMsg{Type: tea.KeyEnter}, runes("j"), runes("j"), runes("j"), runes("W"))
 	if _, ok := a.modal.(*editorModal); !ok {
-		t.Fatalf("c should open the editor, modal is %T", a.modal)
+		t.Fatalf("W should open the editor, modal is %T", a.modal)
 	}
 	pressKeys(a, runes("needs a test"), tea.KeyMsg{Type: tea.KeyCtrlN})
 	body := rec.body("/repos/o/r/pulls/12/comments")
@@ -135,9 +135,9 @@ func TestCommentingOnALinePostsItToThatLineOfTheLatestCommit(t *testing.T) {
 
 func TestRepliesGoToTheThreadTheyAnswer(t *testing.T) {
 	a, _, rec := reviewedPRApp(t)
-	pressKeys(a, runes("j"), runes("j"), runes("r"))
+	pressKeys(a, runes("j"), runes("j"), runes("W"))
 	if _, ok := a.modal.(*editorModal); !ok {
-		t.Fatalf("r should open the editor, modal is %T", a.modal)
+		t.Fatalf("W should open the editor, modal is %T", a.modal)
 	}
 	pressKeys(a, runes("thanks"), tea.KeyMsg{Type: tea.KeyCtrlS})
 	if body := rec.body("/repos/o/r/pulls/12/comments/10/replies"); !strings.Contains(body, `"body":"thanks"`) {
@@ -147,7 +147,7 @@ func TestRepliesGoToTheThreadTheyAnswer(t *testing.T) {
 
 func TestRepliesToAConversationCommentQuoteIt(t *testing.T) {
 	a, _, _ := reviewedPRApp(t)
-	pressKeys(a, runes("j"), runes("r"))
+	pressKeys(a, runes("j"), runes("W"))
 	m, ok := a.modal.(*editorModal)
 	if !ok || !strings.Contains(m.input.Value(), "> @alice wrote:") {
 		t.Fatalf("the reply should start with a quote of alice's comment, modal %T", a.modal)

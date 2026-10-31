@@ -76,11 +76,7 @@ func (v *prView) actionKeys(a *App) []Binding {
 	// Reviewers, labels, assignees.
 	bs = append(bs, Binding{Keys: []string{"@"}, Desc: "reviewers", Help: "request or remove reviewers", Off: !open, Mutates: true, Need: gh.CapTriage, Repo: v.repo,
 		Do: do(func() tea.Cmd { return v.pickReviewers(a) })})
-	labelKeys := []string{"l"}
-	if v.tab != prTabConversation {
-		labelKeys = nil // `l` means something else on the other tabs; the menu has it
-	}
-	bs = append(bs, Binding{Keys: labelKeys, Desc: "labels", Help: "labels…", Mutates: true, Need: gh.CapTriage, Repo: v.repo,
+	bs = append(bs, Binding{Keys: []string{"T"}, Desc: "labels", Help: "add or remove labels", Mutates: true, Need: gh.CapTriage, Repo: v.repo,
 		Locked: lockIf(pr.CanLabel || pr.CanUpdate, "you can't label this pull request"),
 		Do:     do(func() tea.Cmd { return v.pickLabels(a) })})
 	bs = append(bs, Binding{Help: "Assignees…", Mutates: true, Need: gh.CapTriage, Repo: v.repo,
@@ -88,7 +84,7 @@ func (v *prView) actionKeys(a *App) []Binding {
 		Do:     do(func() tea.Cmd { return v.pickAssignees(a) })})
 
 	// Update the branch.
-	bs = append(bs, Binding{Keys: []string{"B"}, Desc: "update branch", Help: "update the branch with its base", Off: !open || pr.MergeState != "BEHIND", Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+	bs = append(bs, Binding{Keys: []string{"B"}, Desc: "update branch", Help: "bring the branch up to date with its base", Off: !open || pr.MergeState != "BEHIND", Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 		Locked: lockIf(pr.CanUpdateBranch || pr.MergeState != "BEHIND", "you can't update this branch"),
 		Do:     do(func() tea.Cmd { return v.updateBranch(a) })})
 
@@ -102,7 +98,7 @@ func (v *prView) actionKeys(a *App) []Binding {
 	case !pr.CanEnableAutoMerge:
 		autoLocked = "auto-merge can't be turned on: it can be merged right now, or isn't allowed for you"
 	}
-	bs = append(bs, Binding{Keys: []string{"A"}, Desc: autoDesc, Help: "auto-merge: merge by itself once it can be", Off: !open, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
+	bs = append(bs, Binding{Desc: autoDesc, Help: "auto-merge: merge by itself once it can be (M offers it too)", Off: !open, Mutates: true, Need: gh.CapWrite, Repo: v.repo,
 		Locked: autoLocked, Do: do(func() tea.Cmd { return v.autoMerge(a) })})
 
 	for _, c := range pr.Closes {
@@ -335,7 +331,7 @@ func (v *prView) toggleThread(a *App, ref itemRef) (Binding, bool) {
 			desc, locked, resolve = "unresolve", lockIf(t.CanUnresolve, "you can't unresolve this thread"), false
 		}
 		id := t.ID
-		return Binding{Keys: []string{"t"}, Desc: desc, Help: desc + " the thread", Mutates: true, Need: gh.CapComment, Repo: v.repo, Locked: locked,
+		return Binding{Keys: []string{"V"}, Desc: desc, Help: desc + " the thread", Mutates: true, Need: gh.CapComment, Repo: v.repo, Locked: locked,
 			Do: do(func() tea.Cmd {
 				return a.act(v.repo, capFirst(desc)+"d the thread", func(ctx context.Context) error {
 					return a.client.ResolveThread(ctx, id, resolve)

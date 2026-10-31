@@ -44,8 +44,9 @@ const readOnlyText = "read-only mode: actions are disabled"
 
 // The headings of the help screen.
 const (
-	groupMove       = "MOVE"
-	groupEverywhere = "EVERYWHERE"
+	groupMove          = "MOVE"
+	groupEverywhere    = "EVERYWHERE"
+	groupChangesGitHub = "CHANGE GITHUB · asks first"
 )
 
 func (b Binding) label() string {
@@ -147,11 +148,11 @@ func overlaps(a, b []string) bool {
 	return slices.ContainsFunc(a, func(k string) bool { return slices.Contains(b, k) })
 }
 
-var moveKeys = []string{"up", "k", "down", "j", "pgup", "ctrl+b", "pgdown", "ctrl+f", "home", "g", "end", "G"}
+var moveKeys = []string{"up", "k", "down", "j", "pgup", "ctrl+b", "pgdown", "ctrl+f", "home", "end"}
 
 // moveBinding is the keys that move through a list, handled by move.
 func moveBinding(desc string, move func(key string) tea.Cmd) Binding {
-	return Binding{Keys: moveKeys, Label: "↑↓", Desc: desc, Help: "move · g G top / bottom · pgup pgdn a page", Group: groupMove, Do: move}
+	return Binding{Keys: moveKeys, Label: "↑↓", Desc: desc, Help: "move · home end top / bottom · pgup pgdn a page", Group: groupMove, Do: move}
 }
 
 // moveKeys moves the table's cursor.
@@ -228,7 +229,7 @@ func (a *App) globalKeys(v View) []Binding {
 			}
 			return nil
 		}},
-		{Keys: []string{"T"}, Help: "next color theme (:theme opens the picker)", Do: do(a.cycleTheme)},
+		{Keys: []string{"ctrl+t"}, Help: "next color theme (:theme opens the picker)", Do: do(a.cycleTheme)},
 	}
 	if filters {
 		bs = append(bs, Binding{Keys: []string{"x"}, Help: "clear the list's filters", Do: do(func() tea.Cmd {
@@ -340,4 +341,29 @@ func prioritise(bs []Binding, keys ...string) []Binding {
 		}
 	}
 	return append(front, rest...)
+}
+
+// keyMap is what every single-character key means, on every screen. A key
+// means one thing everywhere: a screen with no use for it leaves it unused.
+// Lowercase keys only look, go somewhere, copy, sort or filter; a key that
+// changes something on GitHub is a capital (or a symbol) and asks first.
+// TestEveryKeyHasOneMeaning holds the screens to it.
+var keyMap = map[string]string{
+	// Everywhere.
+	"q": "back, quit on a place", "?": "the keys of this screen", ".": "everything you can do",
+	":": "go to anything", "/": "filter", "!": "messages", "<": "previous place", ">": "next place",
+	"[": "previous view, job", "]": "next view, job", "x": "clear the filters", "i": "explain the screen",
+	"L": "live updates", "F": "the saved filter for runs", "j": "down", "k": "up",
+	"J": "select down", "K": "select up", " ": "fold, tick or select",
+	// Look and go: always safe.
+	"o": "open in the browser", "y": "copy", "l": "logs", "c": "workflow file", "d": "diff",
+	"t": "how times show", "p": "pipeline", "h": "its runs", "r": "its repo", "#": "its pull request",
+	"s": "sort", "g": "group", "u": "only mine", "z": "layout", "v": "fold or show all",
+	"e": "next error", "n": "next match, new runs", "N": "previous match", "a": "set aside",
+	"w": "watch", "f": "follow", "m": "which repos", "b": "pick a branch", "*": "pin",
+	"=": "zoom in", "-": "zoom out", "0": "fit", "Z": "full screen", "{": "previous file", "}": "next file",
+	// Change GitHub: ask first.
+	"A": "approve", "C": "request changes", "M": "merge", "B": "bring the branch up to date",
+	"D": "draft or ready", "W": "write a comment", "V": "resolve a thread", "T": "labels",
+	"@": "people", "R": "rerun", "X": "stop or remove", "+": "new", "P": "publish", "E": "enable or disable",
 }

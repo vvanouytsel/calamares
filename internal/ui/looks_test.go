@@ -23,12 +23,12 @@ func TestDoneForNowSetsAnIssueAsideUntilSomeoneWritesAgain(t *testing.T) {
 	if n := a.issuesWaitingIn(0); n != 1 {
 		t.Fatalf("the question to sam should wait for them, got %d", n)
 	}
-	if !strings.Contains(screen(a), "done for now") {
-		t.Fatalf("the panel should offer d:\n%s", screen(a))
+	if !strings.Contains(screen(a), "set aside") {
+		t.Fatalf("the panel should offer a:\n%s", screen(a))
 	}
-	pressKeys(a, runes("d"))
+	pressKeys(a, runes("a"))
 	if n := a.issuesWaitingIn(0); n != 0 {
-		t.Fatalf("d should set the issue aside, %d still wait", n)
+		t.Fatalf("a should set the issue aside, %d still wait", n)
 	}
 	out := screen(a)
 	for _, want := range []string{"Set aside until someone writes again", "bring back"} {

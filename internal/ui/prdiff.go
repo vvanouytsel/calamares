@@ -320,7 +320,7 @@ func (c *changes) keys(a *App, browserURL string, comment func(replyOnly bool) t
 		otherFile.Desc = ""
 		return grouped("CHANGES",
 			c.list.moveKeys("file"),
-			Binding{Keys: []string{"enter", "l", "right"}, Label: "enter", Desc: "show diff", Do: do(func() tea.Cmd { c.focusDiff = true; return nil })},
+			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "show diff", Do: do(func() tea.Cmd { c.focusDiff = true; return nil })},
 			otherFile, browser,
 		)
 	}
@@ -329,14 +329,12 @@ func (c *changes) keys(a *App, browserURL string, comment func(replyOnly bool) t
 		bs = append(bs, Binding{Keys: []string{"enter"}})
 	} else {
 		bs = append(bs,
-			Binding{Keys: []string{"c", "enter"}, Label: "c", Desc: "comment on line", Help: "comment on the selected line", Mutates: true, Need: gh.CapComment,
+			Binding{Keys: []string{"W", "enter"}, Label: "W", Desc: "comment on line", Help: "comment on the selected line, or reply to the thread on it", Mutates: true, Need: gh.CapComment,
 				Do: do(func() tea.Cmd { return comment(false) })},
-			Binding{Keys: []string{"r"}, Desc: "reply", Help: "reply to the thread on the selected line", Mutates: true, Need: gh.CapComment,
-				Do: do(func() tea.Cmd { return comment(true) })},
 		)
 	}
 	bs = append(bs, otherFile,
-		Binding{Keys: []string{"h", "left"}, Label: "←", Desc: "files", Do: do(func() tea.Cmd { c.focusDiff = false; return nil })},
+		Binding{Keys: []string{"left"}, Label: "←", Desc: "files", Do: do(func() tea.Cmd { c.focusDiff = false; return nil })},
 		browser,
 	)
 	return grouped("CHANGES", bs...)
@@ -367,7 +365,7 @@ func (c *changes) comment(a *App, v *prView, replyOnly bool) tea.Cmd {
 		}, "Replied on "+label)
 	}
 	if replyOnly {
-		return a.flashCmd(nHint, "No comment on this line to reply to: c starts one.")
+		return a.flashCmd(nHint, "Select a line of code to comment on.")
 	}
 	if ref.line == 0 || v.pr.HeadSHA == "" {
 		return a.flashCmd(nHint, "Select a line of code to comment on.")

@@ -420,7 +420,7 @@ func (v *logView) Keys(a *App) []Binding {
 			}
 			return nil
 		}},
-		{Keys: []string{"e", "E"}, Label: "e/E", Desc: "next/prev error", Help: "next / previous error line", Do: func(k string) tea.Cmd {
+		{Keys: []string{"e", "shift+e"}, Label: "e", Desc: "next error", Help: "next error line (shift+e: the one before)", Do: func(k string) tea.Cmd {
 			if k == "E" {
 				v.jumpError(-1, false)
 			} else if !v.jumpError(1, false) {
@@ -430,9 +430,9 @@ func (v *logView) Keys(a *App) []Binding {
 		}},
 		{Keys: []string{" ", "enter", "left", "right"}, Label: "space", Desc: "fold step", Help: "fold / unfold the step",
 			Do: func(k string) tea.Cmd { v.fold(k); return nil }},
-		{Keys: []string{"Z"}, Desc: "fold all", Help: "fold / unfold every step", Do: do(func() tea.Cmd { v.foldAll(); return nil })},
+		{Keys: []string{"v"}, Desc: "fold all", Help: "fold / unfold every step", Do: do(func() tea.Cmd { v.foldAll(); return nil })},
 		{Keys: []string{"t"}, Desc: "timestamps", Do: do(func() tea.Cmd { v.showTime = !v.showTime; return nil })},
-		{Keys: []string{"W"}, Desc: "wrap", Help: "wrap long lines", Do: do(func() tea.Cmd { v.wrap = !v.wrap; return nil })},
+		{Keys: []string{"z"}, Desc: "wrap", Help: "wrap long lines", Do: do(func() tea.Cmd { v.wrap = !v.wrap; return nil })},
 		{Keys: []string{"[", "]"}, Label: "[ ]", Desc: "prev/next job", Help: "the log of the previous / next job",
 			Do: func(k string) tea.Cmd { return v.switchJob(a, map[string]int{"]": 1, "[": -1}[k]) }},
 		{Keys: []string{"y"}, Desc: "copy line", Do: do(func() tea.Cmd {
@@ -441,8 +441,8 @@ func (v *logView) Keys(a *App) []Binding {
 			}
 			return nil
 		})},
-		{Keys: []string{"S"}, Desc: "save to file", Help: "save the log to Downloads", Do: do(func() tea.Cmd { return v.save(a) })},
-		{Keys: []string{"o"}, Desc: "browser", Help: "open the job in the browser", Do: do(func() tea.Cmd {
+		{Help: "save the log to Downloads", Do: do(func() tea.Cmd { return v.save(a) })},
+		{Keys: []string{"o"}, Desc: "open in browser", Help: "open the job in the browser", Do: do(func() tea.Cmd {
 			if v.job != nil {
 				return a.openURL(v.job.HTMLURL)
 			}
@@ -468,9 +468,9 @@ func (v *logView) move(k string) {
 		v.cursor = max(v.cursor-page, 0)
 	case "pgdown", "ctrl+f", "ctrl+d":
 		v.cursor = min(v.cursor+page, last)
-	case "home", "g":
+	case "home":
 		v.cursor = 0
-	case "end", "G":
+	case "end":
 		v.cursor = last
 	}
 }

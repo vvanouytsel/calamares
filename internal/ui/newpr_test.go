@@ -63,7 +63,7 @@ func TestTheRepoOffersAPullRequestForABranchWithoutOne(t *testing.T) {
 		t.Errorf("no hint before the pull requests are known")
 	}
 	v.pullsList(a).at = time.Now()
-	if h := screenOf(capsOff(v.branchHint(a))); !strings.Contains(h, "delivery-estimates has no pull request") || !strings.Contains(h, "P create") {
+	if h := screenOf(capsOff(v.branchHint(a))); !strings.Contains(h, "delivery-estimates has no pull request") || !strings.Contains(h, "+ create") {
 		t.Errorf("hint %q", h)
 	}
 	v.pulls.prs = []gh.PullRequest{{Branch: "delivery-estimates"}}

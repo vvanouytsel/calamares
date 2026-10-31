@@ -82,10 +82,10 @@ func TestAKeyGitHubSaysYouCannotUseIsLockedWithItsReason(t *testing.T) {
 
 func TestLabelsArePickedWithTheirColoursAndSentAsOneList(t *testing.T) {
 	a, _, _ := mergeBoxApp(t, "true")
-	pressKeys(a, runes("l"))
+	pressKeys(a, runes("T"))
 	m, ok := a.modal.(*multiPicker)
 	if !ok {
-		t.Fatalf("l should open the label picker, modal is %T", a.modal)
+		t.Fatalf("T should open the label picker, modal is %T", a.modal)
 	}
 	out := screen(a)
 	if !strings.Contains(out, "[x]") || !strings.Contains(out, "docs") {
@@ -114,7 +114,7 @@ func indexOf(xs []int, v int) int {
 func TestLineCommentsAreHeldAndGoOutWithOneReview(t *testing.T) {
 	a, v, rec := mergeBoxApp(t, "true")
 	rec.next.(*countingGitHub).bodies["/repos/o/r/pulls/12/reviews"] = "{}"
-	pressKeys(a, tea.KeyMsg{Type: tea.KeyTab}, runes("j"), runes("l"), runes("j"), runes("j"), runes("j"), runes("c"))
+	pressKeys(a, tea.KeyMsg{Type: tea.KeyTab}, runes("j"), tea.KeyMsg{Type: tea.KeyEnter}, runes("j"), runes("j"), runes("j"), runes("W"))
 	pressKeys(a, runes("needs a test"), tea.KeyMsg{Type: tea.KeyCtrlS})
 	if n := len(a.pendingFor("o/r", 12)); n != 1 {
 		t.Fatalf("%d pending comments, want 1", n)
@@ -125,7 +125,7 @@ func TestLineCommentsAreHeldAndGoOutWithOneReview(t *testing.T) {
 	if rec.body("/repos/o/r/pulls/12/comments") != "" {
 		t.Errorf("a pending comment was posted at once")
 	}
-	pressKeys(a, runes("a"))
+	pressKeys(a, runes("A"))
 	if !strings.Contains(screen(a), "with 1 pending comments") {
 		t.Errorf("the confirmation should mention the pending comments:\n%s", screen(a))
 	}

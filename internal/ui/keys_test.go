@@ -80,7 +80,7 @@ func TestHelpListsTheKeysOfTheScreenItWasOpenedOn(t *testing.T) {
 	a.stack = append(a.stack, rv)
 	a.Update(runes("?"))
 	help := ansi.Strip(a.View())
-	for _, want := range []string{"Keys of CI #7", "A RUN", "rerun: failed jobs", "EVERYWHERE", "refresh this screen", "MOVE"} {
+	for _, want := range []string{"Keys of CI #7", "A RUN", "rerun the failed jobs", "EVERYWHERE", "refresh this screen", "MOVE"} {
 		if !strings.Contains(help, want) {
 			t.Errorf("help of a run doesn't mention %q:\n%s", want, help)
 		}

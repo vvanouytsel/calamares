@@ -41,17 +41,17 @@ func TestPullRequestScreenOpensTheRunBehindACheck(t *testing.T) {
 
 func TestApprovingAPullRequestAsksFirst(t *testing.T) {
 	a, fake := prApp(t)
-	_, cmd := a.Update(runes("a"))
+	_, cmd := a.Update(runes("A"))
 	drive(a, cmd, 5*time.Second)
 	if _, ok := a.modal.(*confirmModal); !ok {
-		t.Fatalf("a should ask before approving, modal is %T", a.modal)
+		t.Fatalf("A should ask before approving, modal is %T", a.modal)
 	}
 	_, cmd = a.Update(tea.KeyMsg{Type: tea.KeyEsc})
 	drive(a, cmd, 5*time.Second)
 	if fake.count("/repos/o/r/pulls/12/reviews") != 0 {
 		t.Errorf("cancelling should not submit a review")
 	}
-	_, cmd = a.Update(runes("a"))
+	_, cmd = a.Update(runes("A"))
 	drive(a, cmd, 5*time.Second)
 	_, cmd = a.Update(runes("y"))
 	drive(a, cmd, 5*time.Second)
@@ -232,9 +232,9 @@ func TestTickedPullRequestsAreApprovedTogether(t *testing.T) {
 	if len(ticked) != 2 || !strings.Contains(screen(a), "2 ticked") {
 		t.Fatalf("J should tick two pull requests, got %d:\n%s", len(ticked), screen(a))
 	}
-	pressKeys(a, runes("a"))
+	pressKeys(a, runes("A"))
 	if _, ok := a.modal.(*confirmModal); !ok {
-		t.Fatalf("a should ask before approving them all, modal is %T", a.modal)
+		t.Fatalf("A should ask before approving them all, modal is %T", a.modal)
 	}
 	pressKeys(a, runes("y"))
 	for i := 1; i <= 3; i++ {

@@ -39,7 +39,7 @@ func newReposView(a *App) *reposView {
 		Column{Title: "DEFAULT BRANCH", Help: "how the default branch is doing now: failing when the latest run of one of its workflows failed, running while a workflow runs or the checks of its last commit do, and passing otherwise"},
 		Column{Title: "RECENT COMMITS", Help: "a tick per recent commit on the default branch, oldest at the left, and how many of the finished ones passed all their checks"},
 		Column{Title: "OWNER", Max: 24, Drop: 4, Help: "who owns the repo: the first owner of the * rule in its CODEOWNERS file (or the owner named in most rules) and how many others share it; red when you can push to a repo that has no owners; owner:@acme/billing in the filter keeps the repos of one owner"},
-		Column{Title: "ALERTS", Right: true, Drop: 2, Help: "open Dependabot alerts; S opens them in the browser"},
+		Column{Title: "ALERTS", Right: true, Drop: 2, Help: "open Dependabot alerts; the . menu opens them in the browser"},
 		Column{Title: "PUSHED", Right: true, Drop: 1, Help: "how long ago someone last pushed to it"},
 	)
 	v.t.Empty = "Loading your repositories…"
@@ -122,12 +122,12 @@ func (v *reposView) Keys(a *App) []Binding {
 	bs = append(bs, filterHint)
 	if repo != "" {
 		bs = append(bs, a.pinKey(repo), a.watchRepoKey(repo), a.alertsKey(repo),
-			Binding{Keys: []string{"w"}, Desc: "shared workflows", Help: "the shared workflows the repo uses", Off: len(sharedUsedBy(a, repo)) == 0,
+			Binding{Help: "the shared workflows the repo uses", Off: len(sharedUsedBy(a, repo)) == 0,
 				Do: do(func() tea.Cmd { return a.push(newSharedView(a, repo, false)) })})
 	}
 	bs = append(bs, Binding{Keys: []string{"s"}, Desc: "sort", Help: "sort by pinned and pushed, last pushed, failing first or name",
 		Do: do(func() tea.Cmd { return v.pickOrder() })})
-	bs = append(bs, Binding{Keys: []string{"A"}, Desc: all, Help: "all repos / only those with Actions", Do: do(func() tea.Cmd {
+	bs = append(bs, Binding{Desc: all, Help: "all repos / only those with Actions", Do: do(func() tea.Cmd {
 		v.showAll = !v.showAll
 		v.t.Top()
 		v.t.ResetWidths()
@@ -135,8 +135,8 @@ func (v *reposView) Keys(a *App) []Binding {
 	})})
 	if repo != "" {
 		bs = append(bs,
-			Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(repo + "/actions")) })},
-			Binding{Keys: []string{"y"}, Help: "copy the URL", Do: do(func() tea.Cmd { return a.copyText(a.client.WebURL(repo), "repo URL") })},
+			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(repo + "/actions")) })},
+			Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(a.client.WebURL(repo), "repo URL") })},
 		)
 	}
 	return grouped("REPOS", append(bs, v.t.moveKeys())...)
@@ -145,7 +145,7 @@ func (v *reposView) Keys(a *App) []Binding {
 // pinKey pins or unpins repo: pinned repos come first in Repos and are
 // always part of the Actions tab.
 func (a *App) pinKey(repo string) Binding {
-	return Binding{Keys: []string{"f"}, Desc: "pin", Help: "pin / unpin the repo", Do: do(func() tea.Cmd {
+	return Binding{Keys: []string{"*"}, Desc: "pin", Help: "pin / unpin the repo", Do: do(func() tea.Cmd {
 		on := a.cfg.ToggleFavourite(repo)
 		if err := a.cfg.Save(); err != nil {
 			return a.flashCmd(nError, "Could not save config: "+err.Error())

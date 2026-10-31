@@ -195,8 +195,8 @@ func (v *sinceGreenView) Keys(a *App) []Binding {
 	if g := v.data.green; g != nil {
 		green := *g
 		bs = append([]Binding{
-			{Keys: []string{"g"}, Desc: "green run", Help: "open the run that passed", Do: do(func() tea.Cmd { return a.push(newRunView(a, v.repo, green)) })},
-			{Keys: []string{"d"}, Desc: "diff", Help: "the changes between the two commits", Off: v.data.sameCommit,
+			{Keys: []string{"enter"}, Desc: fmt.Sprintf("open #%d", green.RunNumber), Help: "open the run that passed", Do: do(func() tea.Cmd { return a.push(newRunView(a, v.repo, green)) })},
+			{Keys: []string{"d"}, Desc: "code diff", Help: "the code changes between the commit that passed and this one", Off: v.data.sameCommit,
 				Do: do(func() tea.Cmd { return a.push(newCompareView(a, v.repo, green.HeadSHA, v.run.HeadSHA)) })},
 		}, bs...)
 	}
