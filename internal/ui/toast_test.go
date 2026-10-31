@@ -23,6 +23,7 @@ func TestAFailedWatchShowsACardWithTheFailedStepAndNotifiesWhenAway(t *testing.T
 	t.Cleanup(func() { sendNotification = notifyWithLink })
 	a := apiApp(t)
 	a.me = "me"
+	a.cfg.Achievements = "off" // between midnight and five, Night owl's card would cover the run's
 	a.watches[7] = &watch{repo: "o/r", run: ghRun(7, "in_progress")}
 	drive(a, a.pollWatches(), 5*time.Second)
 
