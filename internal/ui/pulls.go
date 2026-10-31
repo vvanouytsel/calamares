@@ -176,10 +176,10 @@ func (v *pullsView) marked(a *App) []gh.PullRequest {
 // tickKeys tick pull requests, so a, C and M act on all of them.
 func (v *pullsView) tickKeys() []Binding {
 	return []Binding{
-		{Keys: []string{" "}, Label: "space", Desc: "select", Help: "select the pull request: then a, C and M act on all selected ones",
+		{Keys: []string{" "}, Label: "space", Desc: "select", Help: "select the pull request: then A, C and M act on all selected ones",
 			Do: do(func() tea.Cmd { v.t.ToggleMark(); return nil })},
 		v.t.rangeKeys(),
-		{Keys: []string{"*"}, Help: "select every pull request shown (again: unselect them)", Do: do(func() tea.Cmd { v.t.MarkAll(); return nil })},
+		{Keys: []string{"ctrl+a"}, Help: "select every pull request shown (again: unselect them)", Do: do(func() tea.Cmd { v.t.MarkAll(); return nil })},
 	}
 }
 
@@ -195,7 +195,7 @@ func (v *pullsView) bulkKeys(a *App, prs []gh.PullRequest) []Binding {
 		about = append(about, sDim.Render(fmt.Sprintf("%s #%d · ", a.short(pr.Repo), pr.Number))+sText.Render(pr.Title))
 	}
 	return []Binding{
-		{Keys: []string{"a"}, Desc: fmt.Sprintf("approve (%d)", n), Help: "approve every selected pull request", Mutates: true, Need: gh.CapComment,
+		{Keys: []string{"A"}, Desc: fmt.Sprintf("approve (%d)", n), Help: "approve every selected pull request", Mutates: true, Need: gh.CapComment,
 			Do: do(func() tea.Cmd {
 				return confirm(fmt.Sprintf("Approve %d pull requests?", n), append(about, "", "An approving review is submitted on each."), "Approve", false, func() tea.Cmd {
 					return v.bulk(a, prs, "Approved", func(ctx context.Context, pr gh.PullRequest) error {
@@ -277,12 +277,12 @@ func (v *pullsView) Keys(a *App) []Binding {
 	bs := append(pre, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open", Do: do(func() tea.Cmd { return a.push(newPRView(a, pr.Repo, pr.Number)) })})
 	bs = append(bs, a.prKeys(pr.Repo, pr.Number, pr.Title)...)
 	bs = append(bs, a.prAsideBinding(pr))
-	bs = append(bs, Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(pr.URL) })})
+	bs = append(bs, Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(pr.URL) })})
 	bs = append(bs, v.tickKeys()...)
 	bs = append(bs,
 		filterHint,
 		a.twoLineKey(),
-		Binding{Keys: []string{"y"}, Help: "copy the URL", Do: do(func() tea.Cmd { return a.copyText(pr.URL, "pull request URL") })},
+		Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(pr.URL, "pull request URL") })},
 		v.t.moveKeys(),
 	)
 	return grouped("PULL REQUESTS", v.newKeys(a, bs...)...)
@@ -422,17 +422,17 @@ func (a *App) prKeys(repo string, number int, title string) []Binding {
 		about = append(about, sAmber.Render(fmt.Sprintf("with %d pending comments", n)))
 	}
 	return grouped("A PULL REQUEST",
-		Binding{Keys: []string{"a"}, Desc: "approve", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"A"}, Desc: "approve", Help: "approve the pull request", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
 			return confirm("Approve pull request?", append(about, "", "Your approving review will be submitted."), "Approve", false, func() tea.Cmd {
 				return a.review(repo, number, "APPROVE", "", "Approved "+label)
 			})
 		})},
-		Binding{Keys: []string{"C"}, Help: "request changes", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"C"}, Desc: "request changes", Help: "request changes", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
 			return askEditor("Request changes", about, "what needs to change", "", "submits the review", true, func(text string) tea.Cmd {
 				return a.review(repo, number, "REQUEST_CHANGES", text, "Requested changes on "+label)
 			})
 		})},
-		Binding{Keys: []string{"m"}, Desc: "comment", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"W"}, Desc: "comment", Help: "write a comment on the pull request", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
 			return askEditor("Comment", about, "your comment", "", "posts it", true, func(text string) tea.Cmd {
 				if len(a.pendingFor(repo, number)) > 0 {
 					return a.review(repo, number, "COMMENT", text, "Reviewed "+label)
@@ -442,7 +442,7 @@ func (a *App) prKeys(repo string, number int, title string) []Binding {
 				}, func() tea.Cmd { a.earnReview("COMMENT", 1); return nil })
 			})
 		})},
-		Binding{Keys: []string{"M"}, Desc: "merge", Help: "merge: pick how, then confirm", Mutates: true, Need: gh.CapWrite, Repo: repo,
+		Binding{Keys: []string{"M"}, Desc: "merge", Help: "merge: pick how (or auto-merge once the checks pass), then confirm", Mutates: true, Need: gh.CapWrite, Repo: repo,
 			Do: do(func() tea.Cmd { return a.mergePR(repo, number, title) })},
 		a.watchPRKey(repo, number),
 	)
@@ -459,11 +459,10 @@ func (a *App) mergePR(repo string, number int, title string) tea.Cmd {
 		if len(d.MergeMethods) == 0 {
 			return flashMsg{nHint, "This repo allows no way to merge from here."}
 		}
-		items := make([]pickItem, len(d.MergeMethods))
-		for i, m := range d.MergeMethods {
-			items[i] = pickItem{value: m, label: m, note: sDim.Render(mergeMethodNote[m])}
-		}
-		return modalMsg{newPicker("merge", "Merge "+label, "", items, func(method string) tea.Cmd {
+		return modalMsg{newPicker("merge", "Merge "+label, "", mergeItems(d), func(method string) tea.Cmd {
+			if method == autoMergeOff || strings.HasPrefix(method, autoMergePrefix) {
+				return a.autoMergeChoice(repo, label, d, method)
+			}
 			lines := []string{sWhite.Render(label) + sDim.Render(" · "+title), sDim.Render(d.Branch + " → " + d.Base)}
 			if warn := mergeWarning(d); warn != "" {
 				lines = append(lines, "", sAmber.Render(warn))
@@ -540,4 +539,48 @@ func (v *pullsView) newKeys(a *App, bs ...Binding) []Binding {
 		bs = append(bs, a.newPRKey(a.opts.StartRepo))
 	}
 	return bs
+}
+
+// mergeItems are the ways to merge d: each method the repo allows, and
+// auto-merge too, as it is a way to merge, later.
+func mergeItems(d gh.PullRequestDetail) []pickItem {
+	items := make([]pickItem, 0, 2*len(d.MergeMethods))
+	for _, m := range d.MergeMethods {
+		items = append(items, pickItem{value: m, label: m, note: sDim.Render(mergeMethodNote[m])})
+	}
+	switch {
+	case d.AutoMerge != nil && d.CanDisableAutoMerge:
+		items = append(items, pickItem{value: autoMergeOff, label: "turn off auto-merge", note: sDim.Render("it will no longer merge by itself")})
+	case d.AutoMerge == nil && d.AutoMergeAllowed && d.CanEnableAutoMerge:
+		for _, m := range d.MergeMethods {
+			items = append(items, pickItem{value: autoMergePrefix + m, label: m + " when checks pass", note: sDim.Render("auto-merge: as soon as its checks and reviews allow")})
+		}
+	}
+	return items
+}
+
+// The merge picker's values for auto-merge.
+const (
+	autoMergePrefix = "auto:"
+	autoMergeOff    = "auto-off"
+)
+
+// autoMergeChoice turns auto-merge on with the method in choice, or off,
+// after asking.
+func (a *App) autoMergeChoice(repo, label string, d gh.PullRequestDetail, choice string) tea.Cmd {
+	about := sWhite.Render(label) + sDim.Render(" · "+d.Title)
+	if choice == autoMergeOff {
+		return confirm("Turn off auto-merge?", []string{about, "", "It will no longer merge by itself."}, "Turn off", false, func() tea.Cmd {
+			return a.act(repo, "Auto-merge is off for "+label, func(ctx context.Context) error {
+				return a.client.DisableAutoMerge(ctx, d.ID)
+			})
+		})
+	}
+	method := strings.TrimPrefix(choice, autoMergePrefix)
+	lines := []string{about, "", "It will be merged into " + d.Base + " with " + method + " as soon as its checks and reviews allow."}
+	return confirm("Turn on auto-merge?", lines, "Turn on", false, func() tea.Cmd {
+		return a.act(repo, "Auto-merge is on for "+label+" · "+method, func(ctx context.Context) error {
+			return a.client.EnableAutoMerge(ctx, d.ID, method)
+		})
+	})
 }

@@ -229,9 +229,9 @@ func (t *Table) handleNav(key string) bool {
 		t.Page(-1)
 	case "pgdown", "ctrl+f":
 		t.Page(1)
-	case "home", "g":
+	case "home":
 		t.Top()
-	case "end", "G":
+	case "end":
 		t.Bottom()
 	default:
 		return false

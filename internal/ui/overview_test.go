@@ -54,7 +54,7 @@ func TestEnterOnAnIssueOpensItInItsViewAndItsKeysWorkOnTheOverview(t *testing.T)
 	a := overviewApp(t)
 	v := newPlatformView(a)
 	v.sync(a)
-	if !strings.Contains(barOf(a, v.Keys(a)), " = ") {
+	if !strings.Contains(barOf(a, v.Keys(a)), " d ") {
 		t.Errorf("the keys of the version in Shared workflows should work here: %s", barOf(a, v.Keys(a)))
 	}
 	v.Update(a, tea.KeyMsg{Type: tea.KeyDown})

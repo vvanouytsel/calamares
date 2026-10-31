@@ -162,7 +162,7 @@ func (a *App) watchRepoKey(repo string) Binding {
 	if _, ok := a.cfg.RepoWatch(repo); ok {
 		desc = "repo watch"
 	}
-	return Binding{Keys: []string{"W"}, Desc: desc, Help: "watch the repo: its new runs of the workflows and branches you pick, its new commits, pull requests and releases",
+	return Binding{Keys: []string{"w"}, Desc: desc, Help: "watch the repo: its new runs of the workflows and branches you pick, its new commits, pull requests and releases",
 		Do: do(func() tea.Cmd { return a.openRepoWatch(repo) })}
 }
 
@@ -266,7 +266,7 @@ const (
 	branchesThese
 )
 
-// repoWatchModal is what W opens: the workflows to watch, every one (also
+// repoWatchModal is what w opens: the workflows to watch, every one (also
 // those added later) or the ones ticked, the branches, and what else of the
 // repo to tell about.
 type repoWatchModal struct {
@@ -486,7 +486,7 @@ func (m *repoWatchModal) Render(a *App, w, h int) string {
 	}
 	hints := []string{keycap("space") + sDim.Render(" select"), keycap("←→") + sDim.Render(" branches"), keycap("enter") + sDim.Render(" watch")}
 	if m.watched {
-		hints = append(hints, keycap("x")+sDim.Render(" stop watching"))
+		hints = append(hints, keycap("w")+sDim.Render(" change or stop watching"))
 	}
 	hints = append(hints, keycap("esc")+sDim.Render(" cancel"))
 	lines = append(lines, strings.Join(hints, "  "))

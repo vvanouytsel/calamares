@@ -208,7 +208,7 @@ func (v *environmentsView) Keys(a *App) []Binding {
 			bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "run", Help: "the run that made the last deployment",
 				Do: do(func() tea.Cmd { return a.push(newRunView(a, v.repo, run)) })})
 		}
-		bs = append(bs, Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the environment in the browser",
+		bs = append(bs, Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the environment in the browser",
 			Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(v.repo + "/deployments/" + e.env.Name)) })})
 	}
 	return grouped("ENVIRONMENTS", append(bs, filterHint, v.t.moveKeys())...)
@@ -439,7 +439,7 @@ func (v *secretsView) FilterInfo(a *App) filterInfo { return v.t.Info() }
 func (v *secretsView) sync(a *App)                  { v.rebuild(a) }
 
 func (v *secretsView) Keys(a *App) []Binding {
-	return grouped("SECRETS", Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the repo's secrets in the browser",
+	return grouped("SECRETS", Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the repo's secrets in the browser",
 		Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(v.repo + "/settings/secrets/actions")) })},
 		filterHint, v.t.moveKeys())
 }

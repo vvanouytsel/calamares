@@ -29,7 +29,8 @@ Every list comes with a panel that tells you what is going on and what to do nex
 
 **Act, don't just look**<br>
 Review, approve, merge, comment, rerun failed jobs, cancel, dispatch workflows, open pull requests
-and issues, publish releases. One key each, and it always asks before it changes anything.
+and issues, publish releases. A key means the same on every screen: lowercase keys only look,
+capitals change GitHub and always ask first.
 
 </td>
 </tr>
@@ -75,7 +76,7 @@ between you and a merge.
 
 ![A pull request: the conversation with a colour per person, and what stands between it and a merge](assets/screenshots/pull-request.png)
 
-**Issues** that concern you, with what they want from you. Can't help right now? `d` sets one
+**Issues** that concern you, with what they want from you. Can't help right now? `a` sets one
 aside until someone writes again.
 
 ![Your issues, with the next step for the one under the cursor](assets/screenshots/issues.png)
@@ -105,7 +106,7 @@ everything that waits for it.
 </tr>
 </table>
 
-Also **cockpit** (the default), **midnight**, **ember**, **aurora** and **slate**. Press `T` to try the next one, or `:theme`
+Also **cockpit** (the default), **midnight**, **ember**, **aurora** and **slate**. Press `ctrl+t` to try the next one, or `:theme`
 to pick one with a live preview.
 
 ## Get started
@@ -134,6 +135,9 @@ calamares --readonly         # look, never change anything
 | `:` | Go to any repo, pull request, workflow or command |
 | `i` | What the screen shows: each chip, column and part of the panel |
 | `?` | Every key of the screen you're on |
+
+Lowercase keys only look, go somewhere or copy; capitals (`A`pprove, `M`erge, `R`erun, `X` cancel) change
+something on GitHub and ask first.
 
 The full guide (every key, filtering and configuration) is in [docs/usage.md](docs/usage.md).
 

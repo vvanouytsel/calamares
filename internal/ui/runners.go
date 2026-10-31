@@ -716,7 +716,7 @@ func (v *runnersView) keys(a *App) []Binding {
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open run", Help: "the run of the job it runs, or ran last",
 				Do: do(func() tea.Cmd { return a.push(newRunView(a, use.repo, use.run)) })},
-			Binding{Keys: []string{"l"}, Desc: "log", Help: "the log of that job",
+			Binding{Keys: []string{"l"}, Desc: "logs", Help: "the log of that job",
 				Do: do(func() tea.Cmd { return a.push(newLogView(a, use.repo, use.run, &use.job, 0)) })})
 	}
 	if r != nil && r.listed != nil {
@@ -725,7 +725,7 @@ func (v *runnersView) keys(a *App) []Binding {
 		if strings.Contains(where, "/") {
 			url = where + "/settings/actions/runners"
 		}
-		bs = append(bs, Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the runners in the browser",
+		bs = append(bs, Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the runners in the browser",
 			Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(url)) })})
 	}
 	if len(v.past) > 0 {

@@ -250,7 +250,7 @@ func (v *timeView) keys(a *App) []Binding {
 	if wf := v.workflowOf(); wf != nil {
 		bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "its runs", Help: "the runs of the workflow",
 			Do: do(func() tea.Cmd { return v.openRuns(a, wf) })},
-			Binding{Keys: []string{"s"}, Desc: "its repo", Help: "open the repo the workflow lives in",
+			Binding{Keys: []string{"r"}, Desc: "repo", Help: "open the repo the workflow lives in",
 				Do: do(func() tea.Cmd { return a.push(newRepoView(a, wf.repo, "")) })})
 	} else if r != nil {
 		bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open repo",
@@ -268,7 +268,7 @@ func (v *timeView) keys(a *App) []Binding {
 		Binding{Keys: []string{"v"}, Desc: "fold all", Help: "show / hide what is under every row", Do: do(func() tea.Cmd { v.toggleAll(); return nil })},
 		Binding{Keys: []string{"g"}, Desc: what, Help: "by the workflow the time went to / by the repo whose runs took it",
 			Do: do(func() tea.Cmd { v.byRepo = !v.byRepo; v.t.Top(); return nil })},
-		Binding{Keys: []string{"S"}, Desc: "sort", Help: "sort by hours, growth, runs or name", Do: do(func() tea.Cmd { return v.pickOrder() })},
+		Binding{Keys: []string{"s"}, Desc: "sort", Help: "sort by hours, growth, runs or name", Do: do(func() tea.Cmd { return v.pickOrder() })},
 	)
 }
 
@@ -445,7 +445,7 @@ func (v *timeView) workflowSections(a *App, p *panelText, r *timeRow) {
 		}
 		p.add("")
 		p.callout(cBlue, sWhite.Render(about+"."),
-			keycap("enter")+sText.Render(" its runs  ")+keycap("s")+sText.Render(" its repo"))
+			keycap("enter")+sText.Render(" its runs  ")+keycap("r")+sText.Render(" its repo"))
 	}
 }
 

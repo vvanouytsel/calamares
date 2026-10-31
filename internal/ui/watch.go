@@ -409,8 +409,8 @@ func (v *watchView) repoKeys(a *App) []Binding {
 		repo := r.Key
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open repo", Do: do(func() tea.Cmd { return a.push(newRepoView(a, repo, "")) })},
-			Binding{Keys: []string{"W"}, Desc: "change", Help: "change which workflows and branches are watched", Do: do(func() tea.Cmd { return a.openRepoWatch(repo) })},
-			Binding{Keys: []string{"x"}, Desc: "stop watching", Help: "stop watching the repo", Do: do(func() tea.Cmd { return a.stopRepoWatch(repo) })},
+			Binding{Keys: []string{"w"}, Desc: "change watch", Help: "change what is watched, or stop watching", Do: do(func() tea.Cmd { return a.openRepoWatch(repo) })},
+			Binding{Desc: "stop watching", Help: "stop watching the repo", Do: do(func() tea.Cmd { return a.stopRepoWatch(repo) })},
 		)
 	}
 	return grouped("WATCHING", append(bs, v.viewKey(), filterHint, v.repos.moveKeys())...)

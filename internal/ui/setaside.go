@@ -83,7 +83,7 @@ func (a *App) issueAsideBinding(i gh.Issue) Binding {
 	if aside {
 		desc, help = "bring back", "count it again as waiting for you"
 	}
-	return Binding{Keys: []string{"d"}, Desc: desc, Help: help, Off: !aside && !i.WaitsForYou(a.me),
+	return Binding{Keys: []string{"a"}, Desc: desc, Help: help, Off: !aside && !i.WaitsForYou(a.me),
 		Do: do(func() tea.Cmd { return a.toggleAside(issueAsideKey(i), label, aside) })}
 }
 
@@ -95,7 +95,7 @@ func (a *App) prAsideBinding(p gh.PullRequest) Binding {
 	if aside {
 		desc, help = "bring back", "count it again as waiting for your review"
 	}
-	return Binding{Keys: []string{"d"}, Desc: desc, Help: help, Off: !aside && p.Why != gh.WhyReview,
+	return Binding{Keys: []string{"a"}, Desc: desc, Help: help, Off: !aside && p.Why != gh.WhyReview,
 		Do: do(func() tea.Cmd { return a.toggleAside(prAsideKey(p), label, aside) })}
 }
 

@@ -137,9 +137,9 @@ func TestEUnfoldsTheDetailsOfThePullRequestDescription(t *testing.T) {
 	for v.conv.list.items[v.conv.list.cursor].id != "body" {
 		v.conv.list.cursor++
 	}
-	pressKeys(a, runes("e"))
+	pressKeys(a, runes("v"))
 	if out := screen(a); !strings.Contains(out, "fixes the linter") {
-		t.Errorf("e should unfold the details of the description:\n%s", out)
+		t.Errorf("v should unfold the details of the description:\n%s", out)
 	}
 }
 
@@ -259,15 +259,18 @@ func TestTheKeyBarOfAListLeadsWithWhatYouDoWithTheRowAndNotWithTicking(t *testin
 	}
 }
 
-func TestSecurityStaysOutOfTheKeyBarOfASectionWithoutIt(t *testing.T) {
+func TestSecurityAlertsAreInTheRepoMenuWithoutTakingTheBar(t *testing.T) {
 	a, rv := openRepoView(t, 160)
-	rv.section = sectionReleases
-	if bar := barOf(a, rv.Keys(a)); strings.Contains(bar, " S ") {
-		t.Errorf("S should not take room in the bar of Releases: %q", bar)
-	}
 	rv.section = sectionActions
-	if bar := barOf(a, rv.Keys(a)); !strings.Contains(bar, " S ") {
-		t.Errorf("S belongs in the bar of the Actions section: %q", bar)
+	if bar := barOf(a, rv.Keys(a)); strings.Contains(bar, " S ") {
+		t.Errorf("security alerts have no key of their own any more: %q", bar)
+	}
+	found := false
+	for _, b := range rv.Keys(a) {
+		found = found || strings.HasPrefix(b.Help, "Dependabot alerts")
+	}
+	if !found {
+		t.Errorf("the menu of a repo should offer its security alerts")
 	}
 }
 

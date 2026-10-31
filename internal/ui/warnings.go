@@ -510,15 +510,15 @@ func (v *warningsView) keys(a *App) []Binding {
 		x := h.x
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open run", Do: do(func() tea.Cmd { return a.push(newRunView(a, x.repo, x.run)) })},
-			Binding{Keys: []string{"l"}, Desc: "log", Do: do(func() tea.Cmd { return a.push(newLogView(a, x.repo, x.run, nil, 0)) })},
+			Binding{Keys: []string{"l"}, Desc: "logs", Help: "the log of the run", Do: do(func() tea.Cmd { return a.push(newLogView(a, x.repo, x.run, nil, 0)) })},
 			a.runRepoKey(x.repo, x.run),
-			Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the run in the browser", Do: do(func() tea.Cmd { return a.openURL(x.run.HTMLURL) })})
+			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the run in the browser", Do: do(func() tea.Cmd { return a.openURL(x.run.HTMLURL) })})
 	case g != nil:
 		bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open", Help: "open / close the runs that gave the warning",
 			Do: do(func() tea.Cmd { v.toggle(); return nil })})
 		if via := g.viaList(); len(via) > 0 && strings.Contains(via[0], "@") {
 			src := gh.Use{Target: strings.SplitN(via[0], "@", 2)[0]}.TargetRepo()
-			bs = append(bs, Binding{Keys: []string{"s"}, Desc: "source repo", Help: "open the repo of the action it comes from",
+			bs = append(bs, Binding{Keys: []string{"r"}, Desc: "action repo", Help: "open the repo of the action it comes from",
 				Do: do(func() tea.Cmd { return a.push(newRepoView(a, src, "")) })})
 		}
 	}
@@ -576,7 +576,7 @@ func (v *warningsView) panel(a *App, w, h int) []string {
 		p.add(ico("repo") + sText.Render(a.short(x.repo)+" › "+x.run.Name) + sGold.Render(fmt.Sprintf(" #%d", x.run.RunNumber)))
 		p.add(fact("branch", x.run.HeadBranch) + "  " + fact("user", x.run.Actor.Login) + "  " + steelCell(age(x.run.CreatedAt, time.Now())+" ago", false).Styled)
 		p.add("")
-		p.add(keycap("enter") + sText.Render(" open the run  ") + keycap("s") + sText.Render(" its repo"))
+		p.add(keycap("enter") + sText.Render(" open the run  ") + keycap("r") + sText.Render(" its repo"))
 		return p.render(h)
 	case len(g.kinds) == 1:
 		v.kindPanel(a, p, g.kinds[0])

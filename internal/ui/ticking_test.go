@@ -33,11 +33,11 @@ func TestSpaceTicksRowsAndTheListCountsThem(t *testing.T) {
 	}
 }
 
-func TestStarTicksEveryRowAndEscClearsThemFirst(t *testing.T) {
+func TestCtrlATicksEveryRowAndEscClearsThemFirst(t *testing.T) {
 	a, v := tickingApp(t)
-	pressKeys(a, runes("*"))
+	pressKeys(a, tea.KeyMsg{Type: tea.KeyCtrlA})
 	if len(v.t.Marks()) != 3 {
-		t.Fatalf("* should tick the three rows, got %d", len(v.t.Marks()))
+		t.Fatalf("ctrl+a should tick the three rows, got %d", len(v.t.Marks()))
 	}
 	pressKeys(a, tea.KeyMsg{Type: tea.KeyEsc})
 	if len(v.t.Marks()) != 0 || a.top() != View(v) {

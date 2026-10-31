@@ -95,17 +95,17 @@ func TestTheVersionPanelComparesAndNamesFailuresOnlyTheNewOneHas(t *testing.T) {
 	}
 	out := ansi.Strip(strings.Join(v.shared.panel(a, 60, 60), "\n"))
 	wantAll(t, out, "Fails more than v3", "Passed", "3 of 6 runs", "On v3", "New failures in v4", "Unsupported engine", "Seen in 3 runs",
-		"Changes from v3 to v4", "12 commits", "setup-node v3 → v4", "Compare v3 and v4")
+		"Changes from v3 to v4", "12 commits", "setup-node v3 → v4", "Diff v3 → v4")
 	found := false
 	for _, b := range v.Keys(a) {
 		for _, k := range b.Keys {
-			if k == "=" {
-				found = b.Desc == "v3…v4"
+			if k == "d" {
+				found = b.Desc == "diff v3 → v4"
 			}
 		}
 	}
 	if !found {
-		t.Error("no = v3…v4 key")
+		t.Error("no d diff v3 → v4 key")
 	}
 }
 

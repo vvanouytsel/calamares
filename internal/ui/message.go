@@ -36,7 +36,7 @@ func (m *messageModal) Update(a *App, msg tea.KeyMsg) (bool, tea.Cmd) {
 		m.offset = max(m.offset-10, 0)
 	case "pgdown":
 		m.offset += 10
-	case "esc", "enter", "q", "m":
+	case "esc", "enter", "q", "v":
 		return true, nil
 	}
 	return false, nil

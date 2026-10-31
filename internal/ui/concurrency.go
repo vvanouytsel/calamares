@@ -96,12 +96,12 @@ func (v *runView) concurrencyBox(w int) []string {
 	switch {
 	case n.group != "" && n.replacedBy != nil:
 		lines = append(lines, sText.Render("Canceled for a newer run of concurrency group ")+sWhite.Bold(true).Render(n.group)+sText.Render(": ")+
-			sGold.Render(fmt.Sprintf("#%d", n.replacedBy.RunNumber))+sDim.Render(" · ")+keycap("g")+sText.Render(" open it"))
+			sGold.Render(fmt.Sprintf("#%d", n.replacedBy.RunNumber))+sDim.Render(" · ")+keycap(".")+sText.Render(" open it"))
 	case n.group != "":
 		lines = append(lines, sText.Render("Canceled for a newer run of concurrency group ")+sWhite.Bold(true).Render(n.group))
 	case n.heldBy != nil:
 		lines = append(lines, sText.Render("Waits for ")+sGold.Render(fmt.Sprintf("#%d", n.heldBy.RunNumber))+sText.Render(" of this workflow to finish: they share a concurrency group")+
-			sDim.Render(" · ")+keycap("g")+sText.Render(" open it"))
+			sDim.Render(" · ")+keycap(".")+sText.Render(" open it"))
 	default:
 		return nil
 	}

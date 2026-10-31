@@ -242,7 +242,7 @@ func (v *reposView) panel(a *App, w, h int) []string {
 		p.field("Read", a.readWords(r.FullName, time.Now()))
 	}
 	if chip := a.alertChip(r.FullName); chip != "" {
-		p.add(chip + sDim.Render("  ") + keycap("S"))
+		p.add(chip)
 	}
 
 	if kinds := healthKinds(r.Health); len(kinds) > 0 {
@@ -361,5 +361,5 @@ func (a *App) sharedSection(p *panelText, repo string, now time.Time) {
 		}
 		p.row(left, right)
 	}
-	p.add(keycap("w") + sDim.Render(" shows them in Shared"))
+	p.add(keycap(".") + sDim.Render(" shows them in Shared"))
 }

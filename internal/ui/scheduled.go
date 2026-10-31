@@ -333,7 +333,7 @@ func (v *scheduledView) keys(a *App) []Binding {
 	}
 	if s.workflow != nil {
 		wf := *s.workflow
-		bs = append(bs, Binding{Keys: []string{"r"}, Desc: "runs", Help: "the runs of the workflow",
+		bs = append(bs, Binding{Keys: []string{"h"}, Desc: "runs", Help: "the runs of the workflow",
 			Do: do(func() tea.Cmd { return a.openRepo(s.Repo, "", wf.ID) })})
 		verb := "disable"
 		if wf.State != "active" {
@@ -343,8 +343,8 @@ func (v *scheduledView) keys(a *App) []Binding {
 			Do: do(func() tea.Cmd { return a.toggleWorkflow(s.Repo, wf) })})
 	}
 	bs = append(bs,
-		Binding{Keys: []string{"f"}, Desc: "file", Help: "show the workflow file", Do: do(func() tea.Cmd { return a.push(newWorkflowSourceView(a, s.Repo, s.File, "")) })},
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the workflow in the browser",
+		Binding{Keys: []string{"c"}, Desc: "workflow file", Help: "the YAML of the workflow", Do: do(func() tea.Cmd { return a.push(newWorkflowSourceView(a, s.Repo, s.File, "")) })},
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the workflow in the browser",
 			Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(s.Repo + "/actions/workflows/" + pathBase(s.File))) })})
 	return bs
 }
@@ -408,7 +408,7 @@ func (v *scheduledView) panel(a *App, w, h int) []string {
 	case s.kind() == KFail:
 		p.callout(cRed, "Its last scheduled run failed.", keycap("enter")+sText.Render(" open the run"))
 	case s.last == nil && s.read:
-		p.callout(cFrame, "No scheduled run so far: check the cron, and that the file is on the default branch.", keycap("f")+sText.Render(" show the file"))
+		p.callout(cFrame, "No scheduled run so far: check the cron, and that the file is on the default branch.", keycap("c")+sText.Render(" the workflow file"))
 	default:
 		p.add(sDim.Render("Runs on its schedule."))
 	}

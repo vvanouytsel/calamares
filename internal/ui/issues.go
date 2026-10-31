@@ -188,7 +188,7 @@ func (v *issuesView) Keys(a *App) []Binding {
 
 // newIssueKey is the key that opens a new issue, in repo or in the one you pick.
 func (a *App) newIssueKey(repo string) Binding {
-	return Binding{Keys: []string{"n"}, Desc: "new issue", Mutates: true, Need: gh.CapCreateIssue, Repo: repo,
+	return Binding{Keys: []string{"+"}, Desc: "new issue", Help: "write a new issue", Mutates: true, Need: gh.CapCreateIssue, Repo: repo,
 		Do: do(func() tea.Cmd { return a.newIssue(repo) })}
 }
 
@@ -207,7 +207,7 @@ func (a *App) issueKeys(i gh.Issue) []Binding {
 		current = append(current, l.Name)
 	}
 	bs := []Binding{
-		{Keys: []string{"m"}, Desc: "comment", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
+		{Keys: []string{"W"}, Desc: "comment", Help: "write a comment", Mutates: true, Need: gh.CapComment, Repo: repo, Do: do(func() tea.Cmd {
 			return askEditor("Comment", about, "your comment", "", "posts it", true, func(text string) tea.Cmd {
 				return a.act(repo, "Commented on "+label, func(ctx context.Context) error {
 					return a.client.CommentOnPullRequest(ctx, repo, n, text)
@@ -216,20 +216,20 @@ func (a *App) issueKeys(i gh.Issue) []Binding {
 		})},
 		{Keys: []string{"X"}, Desc: closeDesc, Help: closeDesc + " the issue", Mutates: true, Need: gh.CapTriage, Repo: repo, Locked: closeLocked,
 			Do: do(func() tea.Cmd { return a.closeIssue(i) })},
-		{Keys: []string{"l"}, Desc: "labels", Help: "labels…", Mutates: true, Need: gh.CapTriage, Repo: repo,
+		{Keys: []string{"T"}, Desc: "labels", Help: "add or remove labels", Mutates: true, Need: gh.CapTriage, Repo: repo,
 			Locked: lockIf(i.CanLabel || i.CanUpdate, "you can't label this issue"),
 			Do:     do(func() tea.Cmd { return a.pickLabelsOf(repo, n, current) })},
-		{Keys: []string{"@"}, Desc: "assign", Help: "assignees…", Mutates: true, Need: gh.CapTriage, Repo: repo,
+		{Keys: []string{"@"}, Desc: "assignees", Help: "add or remove assignees", Mutates: true, Need: gh.CapTriage, Repo: repo,
 			Locked: lockIf(i.CanAssign, "you can't assign people here"),
 			Do:     do(func() tea.Cmd { return a.pickAssigneesOf(repo, n, append([]string(nil), i.Assignees...)) })},
 	}
 	if len(i.Linked) > 0 {
 		p := i.Linked[0]
-		bs = append(bs, Binding{Keys: []string{"p"}, Desc: "linked PR", Help: fmt.Sprintf("open the linked pull request #%d", p.Number),
+		bs = append(bs, Binding{Keys: []string{"#"}, Desc: fmt.Sprintf("pull request #%d", p.Number), Help: fmt.Sprintf("open the linked pull request #%d", p.Number),
 			Do: do(func() tea.Cmd { return a.push(newPRView(a, p.Repo, p.Number)) })})
 	}
 	bs = append(bs,
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(i.URL) })},
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(i.URL) })},
 		Binding{Keys: []string{"y"}, Help: "copy the URL", Do: do(func() tea.Cmd { return a.copyText(i.URL, "issue URL") })},
 	)
 	return grouped("AN ISSUE", bs...)
@@ -472,12 +472,12 @@ func issuePanel(a *App, i gh.Issue, w, h int) []string {
 	p.label("Next step")
 	step, c := issueNextStep(a, i)
 	lines := []string{step}
-	keys := []string{keycap("m") + sDim.Render(" reply")}
+	keys := []string{keycap("W") + sDim.Render(" reply")}
 	if i.WaitsForYou(a.me) {
 		if a.issueAside(i) {
-			keys = append(keys, keycap("d")+sDim.Render(" bring back"))
+			keys = append(keys, keycap("a")+sDim.Render(" bring back"))
 		} else {
-			keys = append(keys, keycap("d")+sDim.Render(" done for now"))
+			keys = append(keys, keycap("a")+sDim.Render(" set aside"))
 		}
 	}
 	lines = append(lines, strings.Join(keys, "  "))

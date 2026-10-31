@@ -373,7 +373,7 @@ func (v *prView) Keys(a *App) []Binding {
 	}
 	bs = append(bs,
 		viewKeys("next view", "next view", "", func(d int) tea.Cmd { return v.cycleTab(a, d) }),
-		Binding{Keys: []string{"m"}, Desc: "comment", Mutates: true, Need: gh.CapComment, Repo: v.repo, Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"W"}, Desc: "comment", Help: "write a comment on the pull request", Mutates: true, Need: gh.CapComment, Repo: v.repo, Do: do(func() tea.Cmd {
 			if len(a.pendingFor(v.repo, v.number)) > 0 {
 				return askEditor("Comment", []string{sWhite.Render(a.short(v.repo) + fmt.Sprintf(" #%d", v.number)), sAmber.Render(fmt.Sprintf("sent with your %d pending line comments", len(a.pendingFor(v.repo, v.number))))},
 					"your comment", "", "submits the review", true, func(text string) tea.Cmd {
@@ -393,8 +393,8 @@ func (v *prView) Keys(a *App) []Binding {
 	}
 	bs = append(bs, v.actionKeys(a)...)
 	bs = append(bs,
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(v.pr.URL) })},
-		Binding{Keys: []string{"y"}, Help: "copy the URL", Do: do(func() tea.Cmd { return a.copyText(v.pr.URL, "pull request URL") })},
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(v.pr.URL) })},
+		Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(v.pr.URL, "pull request URL") })},
 	)
 	for i := range bs {
 		if bs[i].Need != gh.CapRead && bs[i].Repo == "" {
@@ -452,7 +452,7 @@ func (v *prView) checksKeys(a *App) []Binding {
 			Binding{Keys: []string{"l"}, Desc: "logs", Do: do(func() tea.Cmd { return a.push(newLogView(a, v.repo, run, nil, 0)) })},
 		)
 	case ok && check.URL != "":
-		bs = append(bs, Binding{Keys: []string{"enter", "right", "l"}, Label: "enter", Help: "open the check's page", Do: do(func() tea.Cmd { return a.openURL(check.URL) })})
+		bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Help: "open the check's page", Do: do(func() tea.Cmd { return a.openURL(check.URL) })})
 	}
 	bs = append(bs,
 		Binding{Keys: []string{"R"}, Desc: "rerun", Off: !failedRun, Mutates: true, Need: gh.CapWrite, Repo: v.repo, Do: do(func() tea.Cmd {

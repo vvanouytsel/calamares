@@ -600,7 +600,7 @@ func (v *activityView) viewKey(a *App) Binding {
 }
 
 func (v *activityView) scopeKey(a *App) Binding {
-	return Binding{Keys: []string{"p"}, Desc: "which repos", Help: "which repos: active, all, or those that call yours",
+	return Binding{Keys: []string{"m"}, Desc: "which repos", Help: "which repos: all with workflows, the pinned ones, or those that call yours",
 		Do: do(func() tea.Cmd { return v.pickScope(a) })}
 }
 
@@ -861,7 +861,7 @@ func (v *activityView) Render(a *App, w, h int) string {
 	case scopeConsumers:
 		which = fmt.Sprintf("%d repos that call yours", len(repos))
 	}
-	scopeChip := " " + chip("p", "repos: "+which+" ▾", v.scope != "" && v.scope != scopeAll) + "   "
+	scopeChip := " " + chip("m", "repos: "+which+" ▾", v.scope != "" && v.scope != scopeAll) + "   "
 	// Under it, on Actions, how many of those repos are busy, worked on
 	// lately or untouched, which says how often each is read.
 	coverage := func(lw int) (string, int) {

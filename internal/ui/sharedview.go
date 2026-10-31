@@ -167,21 +167,21 @@ func (v *sharedView) keys(a *App) []Binding {
 		if ver != nil {
 			desc = "runs at " + shortVersion(ver.version)
 		}
-		bs = append(bs, Binding{Keys: []string{"r"}, Desc: desc, Help: "the runs that called it",
+		bs = append(bs, Binding{Keys: []string{"h"}, Desc: desc, Help: "the runs that called it",
 			Do: do(func() tea.Cmd { return a.push(newSharedRunsView(a, it, ver)) })})
 	}
 	if c, ok := v.compared(it, ver); ok {
-		bs = append(bs, Binding{Keys: []string{"="}, Desc: shortVersion(c.prev.version) + "…" + shortVersion(c.ver.version),
-			Help: "what changed since the version before it: commits and files",
+		bs = append(bs, Binding{Keys: []string{"d"}, Desc: "diff " + shortVersion(c.prev.version) + " → " + shortVersion(c.ver.version),
+			Help: "the commits and files between this version and the one before",
 			Do:   do(func() tea.Cmd { return a.push(newCompareView(a, it.repo, c.prev.version, c.ver.version)) })})
 	}
-	bs = append(bs, Binding{Keys: []string{"s"}, Desc: "source repo", Help: "open the repo it lives in",
+	bs = append(bs, Binding{Keys: []string{"r"}, Desc: "repo", Help: "open the repo it lives in",
 		Do: do(func() tea.Cmd { return a.push(newRepoView(a, it.repo, "")) })})
 	if !it.action {
-		bs = append(bs, Binding{Keys: []string{"f"}, Desc: "file", Help: "show the workflow file at this version",
+		bs = append(bs, Binding{Keys: []string{"c"}, Desc: "workflow file", Help: "the YAML of the workflow at this version",
 			Do: do(func() tea.Cmd { return a.push(newWorkflowSourceView(a, it.repo, it.path, version)) })})
 	}
-	bs = append(bs, Binding{Keys: []string{"o"}, Desc: "browser", Help: "open it in the browser",
+	bs = append(bs, Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open it in the browser",
 		Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(it.repo + "/tree/" + version + "/" + it.path)) })})
 	return append(bs, v.treeKeys()...)
 }
@@ -212,11 +212,11 @@ func (v *sharedView) afterMove(a *App) tea.Cmd {
 
 func (v *sharedView) treeKeys() []Binding {
 	bs := []Binding{
-		{Keys: []string{"b"}, Desc: "outdated only", Help: "only the versions other repos have moved past / everything",
+		{Desc: "outdated only", Help: "only the versions other repos have moved past / everything (or filter with is:behind)",
 			Do: do(func() tea.Cmd { v.behind = !v.behind; v.t.Top(); return nil })},
 		{Keys: []string{"g"}, Desc: "group by source", Help: "under the repo they live in / one list",
 			Do: do(func() tea.Cmd { v.grouped = !v.grouped; v.t.Top(); return nil })},
-		{Keys: []string{"S"}, Desc: "sort", Help: "sort by use, how far behind, failing, last run or name",
+		{Keys: []string{"s"}, Desc: "sort", Help: "sort by use, how far behind, failing, last run or name",
 			Do: do(func() tea.Cmd { return v.pickOrder() })},
 	}
 	if v.actions {
@@ -224,7 +224,7 @@ func (v *sharedView) treeKeys() []Binding {
 		if v.everyone {
 			desc = "only yours"
 		}
-		bs = append(bs, Binding{Keys: []string{"e"}, Desc: desc, Help: "actions of every owner / only of yours",
+		bs = append(bs, Binding{Keys: []string{"u"}, Desc: desc, Help: "actions of every owner / only of yours",
 			Do: do(func() tea.Cmd { v.everyone = !v.everyone; v.t.Top(); return nil })})
 	}
 	return bs
@@ -721,14 +721,14 @@ func (v *sharedView) versionPanel(a *App, p *panelText, it *sharedItem, ver *sha
 	}
 	p.label("Next steps")
 	if compared {
-		p.add(keycap("=") + sText.Render(" Compare "+shortVersion(cmp.prev.version)+" and "+shortVersion(cmp.ver.version)))
+		p.add(keycap("d") + sText.Render(" Diff "+shortVersion(cmp.prev.version)+" → "+shortVersion(cmp.ver.version)))
 	}
 	if it.action {
-		p.add(keycap("s") + sText.Render(" Open the source repository"))
+		p.add(keycap("r") + sText.Render(" Open the source repository"))
 		return
 	}
-	p.add(keycap("r") + sText.Render(" View the runs at "+shortVersion(ver.version)))
-	p.add(keycap("f") + sText.Render(" Show the file") + "   " + keycap("s") + sText.Render(" Open the source repository"))
+	p.add(keycap("h") + sText.Render(" View the runs at "+shortVersion(ver.version)))
+	p.add(keycap("c") + sText.Render(" Show the file") + "   " + keycap("r") + sText.Render(" Open the source repository"))
 }
 
 // sharedRunsView lists the runs we hold that called a shared workflow, at
@@ -972,9 +972,9 @@ func (v *sharedUsersView) Keys(a *App) []Binding {
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "its runs", Help: "the runs of the workflow that uses it",
 				Do: do(func() tea.Cmd { return v.openWorkflow(a, u) })},
-			Binding{Keys: []string{"f"}, Desc: "file", Help: "show the file that uses it", Do: do(func() tea.Cmd { return a.push(newWorkflowSourceView(a, u.repo, u.file, "")) })},
-			Binding{Keys: []string{"s"}, Desc: "repo", Help: "open the repo", Do: do(func() tea.Cmd { return a.push(newRepoView(a, u.repo, "")) })},
-			Binding{Keys: []string{"o"}, Desc: "browser", Help: "open the file in the browser",
+			Binding{Keys: []string{"c"}, Desc: "workflow file", Help: "the YAML of the workflow that uses it", Do: do(func() tea.Cmd { return a.push(newWorkflowSourceView(a, u.repo, u.file, "")) })},
+			Binding{Keys: []string{"r"}, Desc: "repo", Help: "open the repo", Do: do(func() tea.Cmd { return a.push(newRepoView(a, u.repo, "")) })},
+			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the file in the browser",
 				Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(u.repo + "/blob/HEAD/" + u.file)) })},
 		)
 	}
@@ -1021,7 +1021,7 @@ func (v *sharedUsersView) panel(a *App, w, h int) []string {
 	p.add(sDim.Render("uses ") + sText.Render(v.item.name()) + " " + versionText(u.ver.version))
 	if u.ver.behind {
 		p.callout(cWait, sWait.Bold(true).Render("behind "+shortVersion(u.ver.ahead)),
-			keycap("f")+sText.Render(" its file  ")+keycap("o")+sText.Render(" in the browser"))
+			keycap("c")+sText.Render(" its file  ")+keycap("o")+sText.Render(" in the browser"))
 	}
 	if !v.item.action {
 		var calls []sharedCall

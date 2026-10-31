@@ -146,9 +146,9 @@ func (l *scrollList) handleNav(key string) bool {
 		l.scrollPage(-1)
 	case "pgdown", "ctrl+f", " ":
 		l.scrollPage(1)
-	case "home", "g":
+	case "home":
 		l.first()
-	case "end", "G":
+	case "end":
 		l.last()
 	default:
 		return false

@@ -47,9 +47,9 @@ func (v *helpView) Keys(a *App) []Binding {
 			v.offset -= v.fit
 		case "pgdown", "ctrl+f":
 			v.offset += v.fit
-		case "home", "g":
+		case "home":
 			v.offset = 0
-		case "end", "G":
+		case "end":
 			v.offset = v.rows
 		}
 		return nil
@@ -73,11 +73,15 @@ func helpGroups(a *App, bs []Binding) []helpGroup {
 			continue
 		}
 		seen[label] = true
-		i, ok := at[b.Group]
+		group := b.Group
+		if b.Mutates {
+			group = groupChangesGitHub // capitals that ask first, apart from the keys that only look
+		}
+		i, ok := at[group]
 		if !ok {
 			i = len(out)
-			at[b.Group] = i
-			out = append(out, helpGroup{title: b.Group})
+			at[group] = i
+			out = append(out, helpGroup{title: group})
 		}
 		off := ""
 		switch {
@@ -101,7 +105,8 @@ func (v *helpView) Render(a *App, w, h int) string {
 	notes := []string{
 		" " + sWhite.Render("Where things are") + sDim.Render("  Repos: default branch health → a repo (Actions, Pull requests, Commits) → a run → its log · Pull requests: to review, yours, involved · Actions: what fails and runs in your active repos · Watching: runs you want to hear about · Platform: shared workflows and actions, warnings, schedules, runners and runner time · Issues: those involving you · Achievements: your medals and level"),
 		" " + sWhite.Render("Explain") + sDim.Render("  i on a screen says what each of its chips, columns and panel parts means"),
-		" " + sWhite.Render("Refreshing") + sDim.Render("  nothing refreshes by itself: a screen checks GitHub when you open it with data older than 5 minutes, ctrl+r refreshes it, L keeps it live while you're here"),
+		" " + sWhite.Render("Keys") + sDim.Render("  a key means the same on every screen · lowercase keys only look, go somewhere or copy · capitals change something on GitHub and ask first · . lists everything you can do"),
+		" " + sWhite.Render("Refreshing") + sDim.Render("  Actions keeps itself up to date; another screen checks GitHub when you open it with data older than 5 minutes, ctrl+r refreshes it, L keeps it live while you're here"),
 		" " + sWhite.Render("Filtering") + sDim.Render("  words match any column · ") + sText.Render("status:failed") + sDim.Render(" or ") + sText.Render("status:passed") + sDim.Render(" · ") + sText.Render("branch:main,dev") + sDim.Render(" either · ") + sText.Render("-actor:*[bot]") + sDim.Render(" not · ") + sText.Render(`workflow:"Build and release"`) + sDim.Render(" spaces · ") + sText.Render("actor:@me") + sDim.Render(" you"),
 		" " + sWhite.Render("Status") + "  " + sGreen.Render("✓ passed  ") + sRed.Render("✗ failed  ") + sAmber.Render("◐ running  ") + fg(cGrey).Render("○ queued  ") + sWait.Render("◆ waiting for approval  ") + sDim.Render("⊘ canceled  – skipped"),
 	}

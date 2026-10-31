@@ -141,7 +141,7 @@ func (v *achievementsView) Keys(a *App) []Binding {
 	if v.view == achTimeline {
 		bs = append(bs, v.timeline.moveKeys())
 	} else {
-		bs = append(bs, Binding{Keys: []string{"left", "h", "right", "l", "up", "k", "down", "j", "home", "g", "end", "G", "pgup", "pgdown"},
+		bs = append(bs, Binding{Keys: []string{"left", "right", "up", "k", "down", "j", "home", "end", "pgup", "pgdown"},
 			Label: "←↑↓→", Desc: "move", Help: "move through the medals · g G first / last", Group: groupMove,
 			Do: func(k string) tea.Cmd { v.move(a, k); return nil }})
 	}
@@ -181,9 +181,9 @@ func (v *achievementsView) move(a *App, key string) {
 		i = max(i-1, 0)
 	case "right", "l":
 		i = min(i+1, len(shown)-1)
-	case "home", "g":
+	case "home":
 		i = 0
-	case "end", "G":
+	case "end":
 		i = len(shown) - 1
 	case "up", "k", "down", "j", "pgup", "pgdown":
 		if at < 0 {

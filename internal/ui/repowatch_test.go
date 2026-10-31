@@ -117,15 +117,15 @@ func TestAFinishedRunOfAWatchedRepoLeavesAfterTwoHours(t *testing.T) {
 	}
 }
 
-func TestWOnARepoPicksTheWorkflowsAndBranchesToWatch(t *testing.T) {
+func TestLowerWOnARepoPicksTheWorkflowsAndBranchesToWatch(t *testing.T) {
 	withGitHub(t, map[string]string{"/repos/acme/webshop/actions/workflows": `{"workflows":[{"id":1,"name":"CI","path":".github/workflows/ci.yml"},{"id":2,"name":"Nightly","path":".github/workflows/nightly.yml"}]}`})
 	a := apiApp(t)
 	a.repos = []gh.Repo{{FullName: "acme/webshop", HasActions: true, DefaultBranch: "main", PushedAt: time.Now()}}
 	a.tab, a.stack = tabRepos, []View{a.roots[tabRepos]}
 	a.roots[tabRepos].(*reposView).sync(a)
-	press(a, "W")
+	press(a, "w")
 	if _, ok := a.modal.(*repoWatchModal); !ok {
-		t.Fatalf("W should open the picker, got %T", a.modal)
+		t.Fatalf("w should open the picker, got %T", a.modal)
 	}
 	out := ansi.Strip(a.View())
 	for _, want := range []string{"Watch acme/webshop", "every workflow, also new ones", "Nightly", "default (main)"} {
@@ -184,7 +184,7 @@ func TestWatchingARepoWatchesTheRunsAlreadyGoing(t *testing.T) {
 	a.repos = []gh.Repo{{FullName: "acme/webshop", HasActions: true, DefaultBranch: "main", PushedAt: time.Now()}}
 	a.tab, a.stack = tabRepos, []View{a.roots[tabRepos]}
 	a.roots[tabRepos].(*reposView).sync(a)
-	press(a, "W", "enter")
+	press(a, "w", "enter")
 	if w, ok := a.watches[5]; !ok || !w.fromRepo {
 		t.Errorf("the run already going should be watched as soon as the repo is: %+v", a.watches)
 	}

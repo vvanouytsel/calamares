@@ -119,7 +119,7 @@ func (a *App) alertLine(repo string) string {
 
 // alertsKey opens the repo's Dependabot alerts in the browser.
 func (a *App) alertsKey(repo string) Binding {
-	return Binding{Keys: []string{"S"}, Desc: "security", Help: "Dependabot alerts in the browser",
+	return Binding{Help: "Dependabot alerts in the browser",
 		Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(repo + "/security/dependabot")) })}
 }
 

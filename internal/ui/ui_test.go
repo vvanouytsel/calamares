@@ -691,7 +691,8 @@ func TestEscClosesThePickerWithoutChanging(t *testing.T) {
 
 func TestStatusPickerSetsTheStatusFilter(t *testing.T) {
 	a, v, p := branchPickerRepo(t)
-	drive(a, v.key(a, "s"), 5*time.Second)
+	drive(a, byHelp(t, a, p.Keys(a), "pick a status"), 5*time.Second)
+	_ = v
 	a.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("failed")})
 	a.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	if p.status != "failure" {
@@ -788,15 +789,15 @@ func TestRunHintsOnlyOfferWhatApplies(t *testing.T) {
 		return strings.Join(ks, " ")
 	}
 	running := gh.Run{Status: "in_progress"}
-	if got := keys(running); strings.Contains(got, "r") && !strings.Contains(got, "c") || strings.Contains(got, "R") {
+	if got := keys(running); !strings.Contains(got, "X") || strings.Contains(got, "R") {
 		t.Errorf("a running run offers %q", got)
 	}
 	failed := gh.Run{Status: "completed", Conclusion: "failure"}
-	if got := keys(failed); !strings.Contains(got, "R") || strings.Contains(got, "c ") {
+	if got := keys(failed); !strings.Contains(got, "R") || strings.Contains(got, "X") {
 		t.Errorf("a failed run offers %q", got)
 	}
 	waiting := gh.Run{Status: "waiting"}
-	if got := keys(waiting); !strings.HasPrefix(got, "a") {
+	if got := keys(waiting); !strings.HasPrefix(got, "A") {
 		t.Errorf("a waiting run should offer approve first, got %q", got)
 	}
 }
@@ -914,7 +915,7 @@ func TestAQueuedRunThatNeverStartedStaysInWaiting(t *testing.T) {
 	}
 }
 
-func TestSOpensTheRepoOfARunFromWatchingAndFromItsLog(t *testing.T) {
+func TestROpensTheRepoOfARunFromWatchingAndFromItsLog(t *testing.T) {
 	run := gh.Run{ID: 7, WorkflowID: 3, Name: "deploy", Status: "in_progress", CreatedAt: time.Now()}
 	for name, open := range map[string]func(a *App){
 		"watching": func(a *App) {
@@ -926,9 +927,9 @@ func TestSOpensTheRepoOfARunFromWatchingAndFromItsLog(t *testing.T) {
 	} {
 		a := apiApp(t)
 		open(a)
-		pressKeys(a, runes("s"))
+		pressKeys(a, runes("r"))
 		if v, ok := a.top().(*repoView); !ok || v.repo != "o/r" || v.wantWF != run.WorkflowID {
-			t.Errorf("s on the %s screen should open o/r at the run's workflow, the screen is %T", name, a.top())
+			t.Errorf("r on the %s screen should open o/r at the run's workflow, the screen is %T", name, a.top())
 		}
 	}
 }

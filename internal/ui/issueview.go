@@ -95,7 +95,7 @@ func (v *issueView) Keys(a *App) []Binding {
 	}
 	item, ok := v.list.selectedItem()
 	ref, _ := item.data.(itemRef)
-	reply := Binding{Keys: []string{"r", "enter"}, Label: "r", Desc: "reply", Help: "reply to the selected comment, quoting it", Off: !ok, Mutates: true, Need: gh.CapComment, Repo: v.repo}
+	reply := Binding{Keys: []string{"W", "enter"}, Label: "W", Desc: "reply", Help: "reply to the selected comment, quoting it", Off: !ok, Mutates: true, Need: gh.CapComment, Repo: v.repo}
 	if ok {
 		label := fmt.Sprintf("%s #%d", a.short(v.repo), v.number)
 		reply.Do = do(func() tea.Cmd {
@@ -170,7 +170,7 @@ func (v *issueView) Render(a *App, w, h int) string {
 		}
 		v.built = convBuild{inner, v.ver}
 	}
-	body := box(title("Conversation", "r replies · m comments", -1, ""), strings.Join(v.list.render(bw-2, bodyH-2), "\n"), bw, bodyH, cFrame)
+	body := box(title("Conversation", "W comments or replies", -1, ""), strings.Join(v.list.render(bw-2, bodyH-2), "\n"), bw, bodyH, cFrame)
 	if side != nil {
 		rows := strings.Split(body, "\n")
 		lines := make([]string, bodyH)

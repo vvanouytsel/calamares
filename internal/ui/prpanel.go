@@ -100,9 +100,9 @@ func (v *pullsView) panel(a *App, w, h int) []string {
 	step := []string{nextStep(pr)}
 	if pr.Why == gh.WhyReview {
 		if a.prAside(pr) {
-			step = []string{sDim.Render("Set aside until the pull request changes"), keycap("d") + sDim.Render(" bring back")}
+			step = []string{sDim.Render("Set aside until the pull request changes"), keycap("a") + sDim.Render(" bring back")}
 		} else {
-			step = append(step, keycap("a")+sDim.Render(" approve  ")+keycap("d")+sDim.Render(" done for now"))
+			step = append(step, keycap("A")+sDim.Render(" approve  ")+keycap("a")+sDim.Render(" set aside"))
 		}
 	}
 	p.callout(nextStepColor(pr), step...)

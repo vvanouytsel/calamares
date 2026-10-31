@@ -11,10 +11,10 @@ import (
 // runTickKeys tick runs, so R and c act on all of them.
 func runTickKeys(t *Table) []Binding {
 	return []Binding{
-		{Keys: []string{" "}, Label: "space", Desc: "tick", Help: "tick the run: then R and c act on all ticked ones",
+		{Keys: []string{" "}, Label: "space", Desc: "tick", Help: "tick the run: then R and X act on all ticked ones",
 			Do: do(func() tea.Cmd { t.ToggleMark(); return nil })},
 		t.rangeKeys(),
-		{Keys: []string{"*"}, Help: "tick every run shown (again: untick them)", Do: do(func() tea.Cmd { t.MarkAll(); return nil })},
+		{Keys: []string{"ctrl+a"}, Help: "tick every run shown (again: untick them)", Do: do(func() tea.Cmd { t.MarkAll(); return nil })},
 	}
 }
 
@@ -34,7 +34,7 @@ func (a *App) bulkRunKeys(t *Table, ticked []repoRun) []Binding {
 		{Keys: []string{"R"}, Desc: fmt.Sprintf("rerun failed (%d)", len(failed)), Help: "rerun the failed jobs of every ticked run that failed",
 			Off: len(failed) == 0, Mutates: true, Need: gh.CapWrite,
 			Do: do(func() tea.Cmd { return a.rerunFailedOf(failed, t.ClearMarks) })},
-		{Keys: []string{"c"}, Desc: fmt.Sprintf("cancel (%d)", len(active)), Help: "cancel every ticked run that hasn't finished",
+		{Keys: []string{"X"}, Desc: fmt.Sprintf("cancel (%d)", len(active)), Help: "cancel every ticked run that hasn't finished",
 			Off: len(active) == 0, Mutates: true, Need: gh.CapWrite,
 			Do: do(func() tea.Cmd { return a.cancelRuns(active, t.ClearMarks) })},
 	}

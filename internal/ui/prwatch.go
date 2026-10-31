@@ -489,8 +489,8 @@ func (v *watchView) prWatchKeys(a *App) []Binding {
 			bs = append(bs,
 				Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open", Do: do(func() tea.Cmd { return a.push(newPRView(a, repo, number)) })},
 				Binding{Keys: []string{"w"}, Desc: "stop watching", Do: do(func() tea.Cmd { return a.watchPR(repo, number) })},
-				Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(url) })},
-				Binding{Keys: []string{"y"}, Help: "copy the URL", Do: do(func() tea.Cmd { return a.copyText(url, "pull request URL") })},
+				Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(url) })},
+				Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(url, "pull request URL") })},
 			)
 		}
 	}

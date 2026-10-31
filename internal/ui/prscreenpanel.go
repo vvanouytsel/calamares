@@ -229,9 +229,9 @@ func (v *prView) mergeBox(a *App, p *panelText) {
 		if pr.AutoMerge.By != "" {
 			text += " · by " + pr.AutoMerge.By
 		}
-		p.row(sCyan.Render("⟳")+" "+sText.Render(text), sDim.Render("A"))
-	} else if v.keyLock(a, "A") == "" && done < len(steps) {
-		p.row(sDim.Render("A  auto-merge when ready"), "")
+		p.row(sCyan.Render("⟳")+" "+sText.Render(text), sDim.Render("M"))
+	} else if pr.AutoMergeAllowed && pr.CanEnableAutoMerge && done < len(steps) {
+		p.row(sDim.Render("M  auto-merge when ready"), "")
 	}
 	if len(pr.Labels) > 0 || len(pr.Assignees) > 0 {
 		p.label("Labels")

@@ -88,7 +88,7 @@ func (v *commitView) Keys(a *App) []Binding {
 			v.tab = (v.tab + d + commitTabCount) % commitTabCount
 			return nil
 		}),
-		Binding{Keys: []string{"m"}, Desc: "message", Help: "the whole commit message", Do: do(func() tea.Cmd { return commitMessage(v.commit) })},
+		Binding{Keys: []string{"v"}, Desc: "whole message", Help: "the whole commit message", Do: do(func() tea.Cmd { return commitMessage(v.commit) })},
 	)
 	if v.tab == commitTabChanges {
 		return append(bs, v.chg.keys(a, v.commit.URL, nil)...)

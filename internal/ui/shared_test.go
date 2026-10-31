@@ -214,12 +214,12 @@ func TestSharedActionsListYourActionsAndEShowsEveryones(t *testing.T) {
 		t.Errorf("v0.9 should be outdated: %q", l)
 	}
 	if strings.Contains(out, "checkout") {
-		t.Errorf("another owner's action should wait for e:\n%s", out)
+		t.Errorf("another owner's action should wait for u:\n%s", out)
 	}
-	v.Update(a, runes("e"))
+	v.Update(a, runes("u"))
 	v.sync(a)
 	if out := ansi.Strip(v.Render(a, 170, 40)); !strings.Contains(out, "checkout") {
-		t.Errorf("e should show everyone's actions:\n%s", out)
+		t.Errorf("u should show everyone's actions:\n%s", out)
 	}
 }
 
@@ -235,16 +235,16 @@ func TestTheNextViewKeyGoesThroughThePlatformViewsAndWrapsAround(t *testing.T) {
 	}
 }
 
-func TestTheReposPanelNamesTheSharedWorkflowsAndWOpensThem(t *testing.T) {
+func TestTheReposPanelNamesTheSharedWorkflowsAndTheMenuOpensThem(t *testing.T) {
 	a := sharedApp(t)
 	withFiles(a)
 	a.top().(Filterer).SetFilter(a, "billing")
 	out := screen(a)
 	wantAll(t, out, "Shared workflows", "build.yml v2 behind v3")
-	pressKeys(a, runes("w"))
+	drive(a, byHelp(t, a, a.top().Keys(a), "the shared workflows the repo uses"), time.Second)
 	v, ok := a.top().(*sharedView)
 	if !ok {
-		t.Fatalf("w should open the shared workflows of the repo, top is %T", a.top())
+		t.Fatalf("the menu should open the shared workflows of the repo, top is %T", a.top())
 	}
 	wantAll(t, screen(a), "used by billing")
 	if l := lineWith(screen(a), "1 of 2"); !strings.Contains(l, "v2") || !strings.Contains(l, "Outdated") {
@@ -314,11 +314,11 @@ func TestTheFilterKeepsTheTreeAndKnowsFields(t *testing.T) {
 func TestOutdatedOnlyKeepsTheVersionsOthersHaveMovedPast(t *testing.T) {
 	a := sharedApp(t)
 	v, _ := sharedTab(a, sharedFilter)
-	v.Update(a, runes("b"))
+	byHelp(t, a, v.Keys(a), "only the versions other repos have moved past")
 	v.sync(a)
 	out := ansi.Strip(v.Render(a, 170, 30))
 	if n := v.shared.t.Len(); n != 1 || strings.Contains(out, "lint.yml") || !strings.Contains(out, "Outdated only") {
-		t.Errorf("b should leave build.yml v2 and say so: %d rows\n%s", n, out)
+		t.Errorf("outdated only should leave build.yml v2 and say so: %d rows\n%s", n, out)
 	}
 }
 
@@ -349,7 +349,7 @@ func TestSortingByNameAndByLastRun(t *testing.T) {
 	a := sharedApp(t)
 	withFiles(a)
 	v, _ := sharedTab(a, sharedActionsFilter)
-	v.Update(a, runes("e"))
+	v.Update(a, runes("u"))
 	v.sharedActions.order = "name"
 	v.sync(a)
 	if got := v.sharedActions.items[0].name(); got != "checkout" {
@@ -389,8 +389,8 @@ func TestEnterOnASharedWorkflowListsTheWorkflowsThatUseIt(t *testing.T) {
 	if l := lineWith(out, "billing"); !strings.Contains(l, "v2") || !strings.Contains(l, "outdated") {
 		t.Errorf("billing's line should show it is outdated on v2: %q", l)
 	}
-	pressKeys(a, tea.KeyMsg{Type: tea.KeyEsc}, runes("r"))
+	pressKeys(a, tea.KeyMsg{Type: tea.KeyEsc}, runes("h"))
 	if _, ok := a.top().(*sharedRunsView); !ok {
-		t.Errorf("r should list the runs that called it, top is %T", a.top())
+		t.Errorf("h should list the runs that called it, top is %T", a.top())
 	}
 }

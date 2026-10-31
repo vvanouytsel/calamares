@@ -252,7 +252,7 @@ func (v *cachesView) keys(a *App) []Binding {
 		{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open repo", Do: do(func() tea.Cmd { return a.openRepo(c.repo, "", 0) })},
 		{Keys: []string{"X"}, Desc: "clear pull request caches", Help: "delete the caches made for pull requests: only those pull requests could use them, and their next run makes them again",
 			Off: len(pulls) == 0, Mutates: true, Need: gh.CapWrite, Repo: c.repo, Do: do(func() tea.Cmd { return a.clearPullCaches(c.repo, pulls) })},
-		{Keys: []string{"o"}, Desc: "browser", Help: "open the repo's caches in the browser", Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(c.repo + "/actions/caches")) })},
+		{Keys: []string{"o"}, Desc: "open in browser", Help: "open the repo's caches in the browser", Do: do(func() tea.Cmd { return a.openURL(a.client.WebURL(c.repo + "/actions/caches")) })},
 	}
 }
 

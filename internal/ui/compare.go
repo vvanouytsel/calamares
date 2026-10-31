@@ -99,7 +99,7 @@ func (v *compareView) Keys(a *App) []Binding {
 			v.tab = (v.tab + d + 2) % 2
 			return nil
 		}),
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd {
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd {
 			return a.openURL(a.client.WebURL(fmt.Sprintf("%s/compare/%s...%s", v.repo, v.base, v.head)))
 		})},
 	)

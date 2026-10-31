@@ -446,7 +446,7 @@ func (v *runsView) Keys(a *App) []Binding {
 	}
 	bs = append(bs,
 		Binding{Keys: []string{"b"}, Desc: "branch", Help: "pick a branch", Do: do(func() tea.Cmd { return v.pickBranch(a) })},
-		Binding{Keys: []string{"s"}, Desc: "status", Help: "pick a status", Do: do(func() tea.Cmd { return v.pickStatus(a) })},
+		Binding{Help: "pick a status… (or filter with status:failed)", Do: do(func() tea.Cmd { return v.pickStatus(a) })},
 		Binding{Keys: []string{"u"}, Desc: "mine", Help: "only my runs / everyone's", Do: do(func() tea.Cmd {
 			if a.me == "" {
 				return a.flashCmd(nHint, "Still loading your GitHub user, try again in a moment.")
@@ -495,12 +495,12 @@ func (a *App) compactKey() Binding {
 func (a *App) runKeys(repo string, run gh.Run) []Binding {
 	active := run.Active()
 	return grouped("A RUN",
-		Binding{Keys: []string{"a"}, Desc: "approve", Help: "approve / reject a deployment", Off: run.Status != "waiting", Mutates: true, Need: gh.CapWrite, Repo: repo,
+		Binding{Keys: []string{"A"}, Desc: "approve", Help: "approve or reject a deployment that waits for you", Off: run.Status != "waiting", Mutates: true, Need: gh.CapWrite, Repo: repo,
 			Do: do(func() tea.Cmd { return a.approveRun(repo, run) })},
-		Binding{Keys: []string{"c"}, Desc: "cancel", Off: !active, Mutates: true, Need: gh.CapWrite, Repo: repo, Do: do(func() tea.Cmd { return a.cancelRun(repo, run) })},
-		Binding{Keys: []string{"w"}, Desc: "watch", Help: "watch: notify me when it finishes", Off: !active,
+		Binding{Keys: []string{"X"}, Desc: "cancel run", Help: "cancel the run", Off: !active, Mutates: true, Need: gh.CapWrite, Repo: repo, Do: do(func() tea.Cmd { return a.cancelRun(repo, run) })},
+		Binding{Keys: []string{"w"}, Desc: "watch", Help: "tell me when it finishes", Off: !active,
 			Do: do(func() tea.Cmd { return a.watch(repo, run) })},
-		Binding{Keys: []string{"R"}, Desc: "rerun", Help: "rerun: failed jobs, one job or all, with debug logging if you like", Off: active, Mutates: true, Need: gh.CapWrite, Repo: repo,
+		Binding{Keys: []string{"R"}, Desc: "rerun", Help: "rerun the failed jobs, one job or all, with debug logging if you like", Off: active, Mutates: true, Need: gh.CapWrite, Repo: repo,
 			Do: do(func() tea.Cmd { return a.rerunPicker(repo, run, nil, nil) })},
 		// Menu only: no key of its own.
 		Binding{Help: "Download artifacts…", Off: active, Need: gh.CapRead,
@@ -509,8 +509,8 @@ func (a *App) runKeys(repo string, run gh.Run) []Binding {
 			Do: do(func() tea.Cmd { return a.pickJobToRerun(repo, run, nil, false) })},
 		Binding{Keys: []string{"#"}, Desc: "pull request", Help: "open the pull request the run belongs to", Off: len(a.runPRNumbers(repo, run)) == 0,
 			Do: do(func() tea.Cmd { return a.openRunPR(repo, run) })},
-		Binding{Keys: []string{"o"}, Desc: "browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(run.HTMLURL) })},
-		Binding{Keys: []string{"y"}, Help: "copy the URL", Do: do(func() tea.Cmd { return a.copyText(run.HTMLURL, "run URL") })},
+		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the run on GitHub", Do: do(func() tea.Cmd { return a.openURL(run.HTMLURL) })},
+		Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(run.HTMLURL, "run URL") })},
 	)
 }
 
@@ -518,7 +518,7 @@ func (a *App) runKeys(repo string, run gh.Run) []Binding {
 func (a *App) rerun(repo string, run gh.Run, failedOnly, debug bool) tea.Cmd {
 	label := fmt.Sprintf("%s #%d", run.Name, run.RunNumber)
 	if run.Active() {
-		return a.flashCmd(nHint, "Run is still going; cancel it first (c) or wait for it to finish.")
+		return a.flashCmd(nHint, "Run is still going; cancel it first (X) or wait for it to finish.")
 	}
 	if failedOnly && !debug && StatusKind(run.Status, run.Conclusion) != KFail {
 		return a.flashCmd(nHint, "No failed jobs to rerun; use R to rerun everything.")
@@ -596,7 +596,7 @@ func (v *runsView) rebuild(a *App) {
 		} else if k == KQueue {
 			jobs = Cell{Text: "waiting for a runner", Styled: sDim.Render("waiting for a runner")}
 		} else if k == KWait {
-			jobs = Cell{Text: "needs approval (a)", Styled: sWait.Render("needs approval (a)")}
+			jobs = Cell{Text: "needs approval (A)", Styled: sWait.Render("needs approval (A)")}
 		}
 		status := statusCell(k, a.frame, "")
 		if quiet {
