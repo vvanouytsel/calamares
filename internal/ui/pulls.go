@@ -408,7 +408,7 @@ func (v *pullsView) Render(a *App, w, h int) string {
 		chips = append(chips, sDim.Render(fmt.Sprintf("%d draft", st.drafts)))
 	}
 	return listWithPanel(a, w, h,
-		[]string{screenTitle("pr", "Pull requests", "open, involving you", v.t.Len(), chips, w), head},
+		[]string{screenTitleMore("pr", "Pull requests", "open, involving you", v.t.Len(), a.st.prsMore, chips, w), head},
 		func(lw, lh int) string { return v.t.Render(lw, lh) },
 		func(pw, ph int) []string { return v.panel(a, pw, ph) })
 }

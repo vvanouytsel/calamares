@@ -51,6 +51,7 @@ type store struct {
 	startChecked map[int64]time.Time
 
 	prs      []gh.PullRequest
+	prsMore  bool // a search found more than the 100 it reads
 	prsState loadState
 
 	issues      gh.IssuesOfMine
@@ -146,8 +147,9 @@ type stApproverMsg struct {
 	err   error
 }
 type stPRsMsg struct {
-	prs []gh.PullRequest
-	err error
+	prs  []gh.PullRequest
+	more bool
+	err  error
 }
 type stIssuesMsg struct {
 	issues gh.IssuesOfMine
@@ -320,17 +322,18 @@ func (s *store) loadRuns(a *App, ctx context.Context, repos []string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// loadPRs reads the open pull requests that concern you: one GraphQL request.
+// loadPRs reads the open pull requests that concern you: one GraphQL
+// request, and more only when you have more than 30 of a kind.
 func (s *store) loadPRs(a *App) tea.Cmd {
 	if !s.prsState.begin() {
 		return nil
 	}
 	return func() tea.Msg {
-		prs, err := a.client.MyPullRequests(context.Background())
+		prs, more, err := a.client.MyPullRequests(context.Background())
 		if err == nil {
 			a.client.Remember(snapshotPRs, prs)
 		}
-		return stPRsMsg{prs, err}
+		return stPRsMsg{prs, more, err}
 	}
 }
 
@@ -535,7 +538,7 @@ func (s *store) handle(a *App, msg tea.Msg) (tea.Cmd, bool) {
 		if m.err != nil {
 			return a.flashCmd(nError, "Could not read your pull requests: "+m.err.Error()), true
 		}
-		s.prs = m.prs
+		s.prs, s.prsMore = m.prs, m.more
 		return nil, true
 	case stUsesMsg:
 		s.usesState.end(m.err)

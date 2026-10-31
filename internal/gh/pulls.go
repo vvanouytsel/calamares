@@ -132,32 +132,38 @@ type prSearch struct {
 	Nodes []prNode `json:"nodes"`
 }
 
-const myPRsQuery = `query {
-  review: search(query: "is:pr is:open review-requested:@me archived:false sort:updated-desc", type: ISSUE, first: 30) { nodes { ...pr } }
-  authored: search(query: "is:pr is:open author:@me archived:false sort:updated-desc", type: ISSUE, first: 30) { nodes { ...pr } }
-  involved: search(query: "is:pr is:open involves:@me archived:false sort:updated-desc", type: ISSUE, first: 30) { nodes { ...pr } }
+// myPRSearches are the searches for the pull requests that concern you, in
+// the order a pull request found by more than one is told by.
+var myPRSearches = []mineSearch{
+	{"review", "is:pr is:open review-requested:@me archived:false sort:updated-desc"},
+	{"authored", "is:pr is:open author:@me archived:false sort:updated-desc"},
+	{"involved", "is:pr is:open involves:@me archived:false sort:updated-desc"},
 }
-` + prFields
+
+var myPRsQuery = mineQuery(myPRSearches, "pr", prFields, "")
 
 // MyPullRequests returns the open pull requests that concern you: those
 // waiting for your review, then yours, then others you're involved in.
-// One GraphQL request.
-func (c *Client) MyPullRequests(ctx context.Context) ([]PullRequest, error) {
+// One GraphQL request, and one more per 30 for a search with more than 30,
+// up to 100 each; more says a search found more than that.
+func (c *Client) MyPullRequests(ctx context.Context) (prs []PullRequest, more bool, err error) {
 	var data struct {
-		Review   prSearch `json:"review"`
-		Authored prSearch `json:"authored"`
-		Involved prSearch `json:"involved"`
+		Review   searchPage[prNode] `json:"review"`
+		Authored searchPage[prNode] `json:"authored"`
+		Involved searchPage[prNode] `json:"involved"`
 	}
 	if err := allowPartial(c.GraphQL(ctx, myPRsQuery, nil, &data)); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	seen := map[string]bool{}
 	var out []PullRequest
-	for _, group := range []struct {
-		search prSearch
-		why    string
+	for i, group := range []struct {
+		page searchPage[prNode]
+		why  string
 	}{{data.Review, WhyReview}, {data.Authored, WhyYours}, {data.Involved, WhyInvolved}} {
-		for _, n := range group.search.Nodes {
+		nodes, more1 := readRest(ctx, c, myPRSearches[i], "pr", prFields, group.page)
+		more = more || more1
+		for _, n := range nodes {
 			if n.Number == 0 || seen[n.URL] {
 				continue
 			}
@@ -167,7 +173,7 @@ func (c *Client) MyPullRequests(ctx context.Context) ([]PullRequest, error) {
 			out = append(out, pr)
 		}
 	}
-	return out, nil
+	return out, more, nil
 }
 
 const repoPRsQuery = `query($owner: String!, $name: String!) {

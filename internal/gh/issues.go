@@ -58,6 +58,9 @@ type LinkedPR struct {
 // IssuesOfMine are the open issues that concern you, in the three views.
 type IssuesOfMine struct {
 	Assigned, Created, Mentioned []Issue
+	// More says, for each list in the order above, that GitHub found more
+	// than were read.
+	More [3]bool `json:",omitempty"`
 }
 
 const issueFields = `fragment issue on Issue {
@@ -74,13 +77,15 @@ const issueFields = `fragment issue on Issue {
   viewerCanUpdate viewerCanClose viewerCanReopen viewerCanLabel viewerCanAssign
 }`
 
-const myIssuesQuery = `query MyIssues {
-  viewer { login }
-  assigned: search(query: "is:issue is:open assignee:@me archived:false sort:updated-desc", type: ISSUE, first: 30) { nodes { ...issue } }
-  created: search(query: "is:issue is:open author:@me archived:false sort:updated-desc", type: ISSUE, first: 30) { nodes { ...issue } }
-  mentioned: search(query: "is:issue is:open mentions:@me archived:false sort:updated-desc", type: ISSUE, first: 30) { nodes { ...issue } }
+// myIssueSearches are the searches for the issues that concern you, in the
+// order of IssuesOfMine.
+var myIssueSearches = []mineSearch{
+	{"assigned", "is:issue is:open assignee:@me archived:false sort:updated-desc"},
+	{"created", "is:issue is:open author:@me archived:false sort:updated-desc"},
+	{"mentioned", "is:issue is:open mentions:@me archived:false sort:updated-desc"},
 }
-` + issueFields
+
+var myIssuesQuery = mineQuery(myIssueSearches, "issue", issueFields, "  viewer { login }\n")
 
 type issueNode struct {
 	ID          string    `json:"id"`
@@ -188,15 +193,16 @@ func (n issueNode) issue() Issue {
 }
 
 // MyIssues returns the open issues assigned to you, created by you and
-// mentioning you, each with how it concerns you. One GraphQL request.
+// mentioning you, each with how it concerns you. One GraphQL request, and
+// one more per 30 for a search with more than 30, up to 100 each.
 func (c *Client) MyIssues(ctx context.Context) (IssuesOfMine, error) {
 	var data struct {
 		Viewer struct {
 			Login string `json:"login"`
 		} `json:"viewer"`
-		Assigned  struct{ Nodes []issueNode } `json:"assigned"`
-		Created   struct{ Nodes []issueNode } `json:"created"`
-		Mentioned struct{ Nodes []issueNode } `json:"mentioned"`
+		Assigned  searchPage[issueNode] `json:"assigned"`
+		Created   searchPage[issueNode] `json:"created"`
+		Mentioned searchPage[issueNode] `json:"mentioned"`
 	}
 	if err := allowPartial(c.GraphQL(ctx, myIssuesQuery, nil, &data)); err != nil {
 		return IssuesOfMine{}, err
@@ -217,9 +223,12 @@ func (c *Client) MyIssues(ctx context.Context) (IssuesOfMine, error) {
 		}
 	}
 	var res IssuesOfMine
-	pick(data.Assigned.Nodes, "assigned", &res.Assigned)
-	pick(data.Created.Nodes, "author", &res.Created)
-	pick(data.Mentioned.Nodes, "mention", &res.Mentioned)
+	lists := []*[]Issue{&res.Assigned, &res.Created, &res.Mentioned}
+	for i, page := range []searchPage[issueNode]{data.Assigned, data.Created, data.Mentioned} {
+		var nodes []issueNode
+		nodes, res.More[i] = readRest(ctx, c, myIssueSearches[i], "issue", issueFields, page)
+		pick(nodes, []string{"assigned", "author", "mention"}[i], lists[i])
+	}
 	for _, list := range []*[]Issue{&res.Assigned, &res.Created, &res.Mentioned} {
 		for k := range *list {
 			i := &(*list)[k]

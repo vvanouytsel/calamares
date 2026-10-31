@@ -100,9 +100,12 @@ func TestMyPullRequestsListsReviewRequestsThenYoursThenTheRestOnce(t *testing.T)
 		"involved":{"nodes":[{"number":1,"url":"u1","repository":{"nameWithOwner":"o/a"}},{"number":3,"url":"u3","repository":{"nameWithOwner":"o/c"}}]}}}`)
 	t.Cleanup(func() { http.DefaultTransport = orig })
 
-	prs, err := NewWithToken("github.com", "x", "test").MyPullRequests(context.Background())
+	prs, more, err := NewWithToken("github.com", "x", "test").MyPullRequests(context.Background())
 	if err != nil {
 		t.Fatal(err)
+	}
+	if more {
+		t.Errorf("searches without a next page found no more")
 	}
 	var got []string
 	for _, pr := range prs {
