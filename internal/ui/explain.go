@@ -132,7 +132,10 @@ func (v *activityView) Explain(a *App) explained {
 			{"…", "a count not known yet: open the view to read it"},
 		}
 	}
-	items = append(items, explanation{"p", "which repos the counts cover: your most recently pushed ones and the pinned ones, all repos with workflows, or the ones that call yours"})
+	items = append(items, explanation{"p", "which repos the counts cover: all repos with workflows, the pinned ones, or the ones that call yours"})
+	if v.place == tabActions && v.sub() == nil {
+		items = append(items, explanation{"busy · worked on lately · untouched", "how often each repo is read: busy (a run is going) every 15 s; worked on lately (pinned, watched, pushed in the last day, a schedule just came due, or a run of yours this week) every 2 min; untouched for a day or more every 20 min. A push seen by the push check, every 2 min, reads a repo at once. The dot turns amber when the requests left this hour run low and the quieter repos wait longer"})
+	}
 	if s := v.sub(); s != nil {
 		if e, ok := s.(interface{ explain(*App) []explanation }); ok {
 			items = append(items, e.explain(a)...)

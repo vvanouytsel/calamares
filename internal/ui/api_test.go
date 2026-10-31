@@ -76,11 +76,25 @@ func tickFor(a *App, n int) {
 func TestNothingIsRequestedWhileLiveUpdatesAreOff(t *testing.T) {
 	fake := withGitHub(t, map[string]string{"/repos/o/r/actions/runs": oneRun})
 	a := apiApp(t)
-	a.tab, a.stack = tabActions, []View{a.roots[tabActions]}
+	a.tab, a.stack = tabPlatform, []View{a.roots[tabPlatform]}
 	a.st.runState("o/r").at = time.Now().Add(-time.Hour)
 	tickFor(a, 5)
 	if n := fake.total(); n != 0 {
 		t.Errorf("%d requests while idle with live updates off, want 0", n)
+	}
+}
+
+func TestActionsKeepsItsReposUpToDateWithLiveUpdatesOff(t *testing.T) {
+	fake := withGitHub(t, map[string]string{"/repos/o/r/actions/runs": oneRun})
+	a := apiApp(t)
+	a.tab, a.stack = tabActions, []View{a.roots[tabActions]}
+	a.st.runState("o/r").tried = time.Now().Add(-time.Hour)
+	tickFor(a, 3)
+	if n := fake.count("/repos/o/r/actions/runs"); n != 1 {
+		t.Errorf("a repo due on Actions was read %d times in 3 seconds, want 1", n)
+	}
+	if got := ansi.Strip(a.liveState()); !strings.Contains(got, "● live") {
+		t.Errorf("the header should say Actions is live, got %q", got)
 	}
 }
 
@@ -311,6 +325,7 @@ func apiApp(t *testing.T) *App {
 	a.tab = tabIssues
 	a.stack = []View{a.roots[tabIssues]}
 	a.st.issuesState.at = time.Now()
+	a.st.pushesState.tried = time.Now() // the push check isn't due; its own tests make it so
 	return a
 }
 

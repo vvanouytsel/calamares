@@ -238,6 +238,9 @@ func (v *reposView) panel(a *App, w, h int) []string {
 	}
 	meta = append(meta, fact("clock", "pushed "+age(r.PushedAt, time.Now())+" ago"))
 	p.add(strings.Join(meta, sDim.Render("  ·  ")))
+	if r.HasActions && !r.Archived {
+		p.field("Read", a.readWords(r.FullName, time.Now()))
+	}
 	if chip := a.alertChip(r.FullName); chip != "" {
 		p.add(chip + sDim.Render("  ") + keycap("S"))
 	}

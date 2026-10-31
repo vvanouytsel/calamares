@@ -255,6 +255,10 @@ func (a *App) toggleLive() tea.Cmd {
 		a.setFlash(nInfo, "Live updates on: this screen keeps itself up to date · L stops")
 		return a.top().Refresh(a, true)
 	}
+	if a.keepsUp() {
+		a.setFlash(nInfo, "Live updates off on the other screens · this one keeps itself up to date")
+		return nil
+	}
 	a.setFlash(nInfo, "Live updates off · ctrl+r refreshes")
 	return nil
 }
