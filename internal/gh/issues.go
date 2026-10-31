@@ -85,7 +85,7 @@ var myIssueSearches = []mineSearch{
 	{"mentioned", "is:issue is:open mentions:@me archived:false sort:updated-desc"},
 }
 
-var myIssuesQuery = mineQuery(myIssueSearches, "issue", issueFields, "  viewer { login }\n")
+var myIssuesQuery = mineQuery("MyIssues", myIssueSearches, "issue", issueFields, "  viewer { login }\n")
 
 type issueNode struct {
 	ID          string    `json:"id"`

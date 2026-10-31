@@ -140,7 +140,7 @@ var myPRSearches = []mineSearch{
 	{"involved", "is:pr is:open involves:@me archived:false sort:updated-desc"},
 }
 
-var myPRsQuery = mineQuery(myPRSearches, "pr", prFields, "")
+var myPRsQuery = mineQuery("MyPullRequests", myPRSearches, "pr", prFields, "")
 
 // MyPullRequests returns the open pull requests that concern you: those
 // waiting for your review, then yours, then others you're involved in.

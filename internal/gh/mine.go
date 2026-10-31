@@ -30,11 +30,12 @@ type searchPage[T any] struct {
 	Nodes []T `json:"nodes"`
 }
 
-// mineQuery asks for the first page of each search in one request, with
-// fragment (named fragName) for each node, and extra fields at the top.
-func mineQuery(searches []mineSearch, fragName, fragment, extra string) string {
+// mineQuery is the query named name that asks for the first page of each
+// search in one request, with fragment (named fragName) for each node, and
+// extra fields at the top.
+func mineQuery(name string, searches []mineSearch, fragName, fragment, extra string) string {
 	var b strings.Builder
-	b.WriteString("query {\n" + extra)
+	b.WriteString("query " + name + " {\n" + extra)
 	for _, s := range searches {
 		fmt.Fprintf(&b, "  %s: search(query: %q, type: ISSUE, first: %d) { issueCount pageInfo { hasNextPage endCursor } nodes { ...%s } }\n",
 			s.alias, s.query, minePage, fragName)
@@ -47,7 +48,7 @@ func mineQuery(searches []mineSearch, fragName, fragment, extra string) string {
 // that fails leaves what was read before it, counted as more.
 func readRest[T any](ctx context.Context, c *Client, search mineSearch, fragName, fragment string, first searchPage[T]) (nodes []T, more bool) {
 	nodes = first.Nodes
-	query := `query($q: String!, $after: String!, $n: Int!) {
+	query := `query SearchPage($q: String!, $after: String!, $n: Int!) {
   search(query: $q, type: ISSUE, first: $n, after: $after) { issueCount pageInfo { hasNextPage endCursor } nodes { ...` + fragName + ` } }
 }
 ` + fragment
