@@ -395,13 +395,13 @@ func (v *issuesView) Render(a *App, w, h int) string {
 		default:
 			n = len(a.st.issues.Mentioned)
 		}
-		items[k] = stripItem{Label: name, Icon: []string{"user", "pencil", "at"}[k], Count: fmt.Sprint(n)}
+		items[k] = stripItem{Label: name, Icon: []string{"user", "pencil", "at"}[k], Count: countMore(n, a.st.issues.More[k])}
 		if w := a.issuesWaitingIn(k); w > 0 {
 			items[k].St = &sWait
 		}
 	}
 	return listWithPanel(a, w, h,
-		[]string{screenTitle("issue", "Issues", "yours across your repos", v.t.Len(), chips, w), viewStrip(items, v.view, w), " " + a.filterLine(v.t.Filter(), v.FilterInfo(a))},
+		[]string{screenTitleMore("issue", "Issues", "yours across your repos", v.t.Len(), a.st.issues.More[v.view], chips, w), viewStrip(items, v.view, w), " " + a.filterLine(v.t.Filter(), v.FilterInfo(a))},
 		func(lw, lh int) string { return v.t.Render(lw, lh) },
 		func(pw, ph int) []string { return v.panel(a, pw, ph) })
 }

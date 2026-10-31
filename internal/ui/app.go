@@ -162,6 +162,8 @@ type App struct {
 	listsFresh bool
 	listsOf    View
 	keyAt      time.Time // when the last key came
+	// reads holds how much goes on in each repo; see readInfoOf.
+	reads readCache
 
 	client  *gh.Client
 	cfg     *config.Config
@@ -484,9 +486,18 @@ func (a *App) following() bool {
 	return ok && f.Following()
 }
 
+// KeepsUp is implemented by screens that always keep themselves up to date,
+// whatever the live setting, because what they read is cheap enough.
+type KeepsUp interface{ KeepsUp() bool }
+
+func (a *App) keepsUp() bool {
+	k, ok := a.top().(KeepsUp)
+	return ok && k.KeepsUp()
+}
+
 // liveNow reports whether the screen on display updates itself right now:
 // live updates are on, or it follows a running job.
-func (a *App) liveNow() bool { return a.live || a.following() }
+func (a *App) liveNow() bool { return a.live || a.following() || a.keepsUp() }
 
 // openRepo shows a repository (under the Repos tab).
 func (a *App) openRepo(repo, branch string, wfID int64) tea.Cmd {
@@ -655,6 +666,9 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if a.ticks%int(prWatchEvery/time.Second) == 0 {
 			cmds = append(cmds, a.pollPRWatches())
+		}
+		if a.st.pushesState.waited(pushesEvery) {
+			cmds = append(cmds, a.st.loadPushes(a))
 		}
 		cmds = append(cmds, a.wantAlerts(), a.pollStatus())
 		if save := a.opts.SaveCache; save != nil && time.Since(a.savedAt) > saveCacheEvery {
@@ -913,7 +927,7 @@ func (a *App) liveState() string {
 	switch {
 	case a.freezing:
 		return sCyan.Bold(true).Render("❄ frozen · ctrl+s resumes")
-	case a.live:
+	case a.live || a.keepsUp():
 		return pill("● live", cGreen, cOnAccent)
 	case a.following():
 		return sGreen.Render("● live while it runs")

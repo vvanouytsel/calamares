@@ -14,13 +14,17 @@ import (
 
 // store holds what several screens share: your repositories, the latest runs
 // of the ones the Actions tab covers, and your pull requests.
-// Nothing in it refreshes by itself. Screens load what they show when you
-// open them, when you press ctrl+r, and while live updates are on.
+// Screens load what they show when you open them, when you press ctrl+r, and
+// while they keep themselves up to date; the push check alone runs by itself.
 type store struct {
 	loaded     bool // the repo list is known, from the cache or from GitHub
 	reposState loadState
 	sweeping   []gh.Repo // repos read so far by the sweep in progress
 	refreshing int       // repos being read again on their own, when only some are
+	// pushesState is how the push check went; newRepos the repos it found
+	// that the list doesn't hold yet.
+	pushesState loadState
+	newRepos    []string
 
 	status  map[string][]gh.Run // latest runs per repo
 	runsGen int                 // goes up whenever status changes
@@ -47,6 +51,7 @@ type store struct {
 	startChecked map[int64]time.Time
 
 	prs      []gh.PullRequest
+	prsMore  bool // a search found more than the 100 it reads
 	prsState loadState
 
 	issues      gh.IssuesOfMine
@@ -118,6 +123,14 @@ type stReposMsg struct {
 	err   error
 }
 
+// stPushesMsg is one page of the push check; next is the cursor of the
+// following page, or "" when the check is done.
+type stPushesMsg struct {
+	pushes []gh.Push
+	next   string
+	err    error
+}
+
 // stSomeReposMsg is the answer to reading only some repositories again.
 type stSomeReposMsg struct {
 	repos []gh.Repo
@@ -134,8 +147,9 @@ type stApproverMsg struct {
 	err   error
 }
 type stPRsMsg struct {
-	prs []gh.PullRequest
-	err error
+	prs  []gh.PullRequest
+	more bool
+	err  error
 }
 type stIssuesMsg struct {
 	issues gh.IssuesOfMine
@@ -212,6 +226,66 @@ func (s *store) loadRepos(a *App) tea.Cmd {
 	return s.sweepPage(a, "")
 }
 
+// loadPushes reads when each of your repos was last pushed to, a page of 100
+// at a time. A repo pushed to since its runs were last read is then due on
+// Actions at once; repos the list didn't hold yet are read in full after.
+func (s *store) loadPushes(a *App) tea.Cmd {
+	if !s.loaded || s.reposState.busy || a.client.GraphQLRate().Saving(time.Now()) || !s.pushesState.begin() {
+		return nil
+	}
+	s.newRepos = nil
+	return s.pushesPage(a, "")
+}
+
+func (s *store) pushesPage(a *App, after string) tea.Cmd {
+	return func() tea.Msg {
+		// The foreground lane: a page or three every 2 minutes shouldn't make
+		// the background reads behind it wait.
+		pushes, next, err := a.client.SweepPushes(context.Background(), after)
+		return stPushesMsg{pushes, next, err}
+	}
+}
+
+// gotPushes takes a page of the push check into the repo list.
+func (s *store) gotPushes(a *App, m stPushesMsg) tea.Cmd {
+	if m.err != nil {
+		s.pushesState.end(m.err)
+		return nil // the next check tries again; a sweep or a refresh says what is wrong
+	}
+	at := make(map[string]int, len(a.repos))
+	for i, r := range a.repos {
+		at[strings.ToLower(r.FullName)] = i
+	}
+	moved := false
+	for _, p := range m.pushes {
+		i, ok := at[strings.ToLower(p.Repo)]
+		switch {
+		case !ok:
+			s.newRepos = append(s.newRepos, p.Repo)
+		case p.At.After(a.repos[i].PushedAt):
+			if !moved {
+				a.repos, moved = slices.Clone(a.repos), true
+			}
+			a.repos[i].PushedAt = p.At
+		}
+	}
+	if moved {
+		sort.SliceStable(a.repos, func(i, j int) bool { return a.repos[i].PushedAt.After(a.repos[j].PushedAt) })
+		a.reads = readCache{}
+	}
+	if n := len(m.pushes); m.next != "" && n > 0 && time.Since(m.pushes[n-1].At) < sweepSince {
+		return s.pushesPage(a, m.next)
+	}
+	s.pushesState.end(nil)
+	if moved {
+		a.client.Remember(snapshotRepos, a.repos)
+	}
+	if len(s.newRepos) > 0 {
+		return s.loadSomeRepos(a, s.newRepos)
+	}
+	return nil
+}
+
 // loadSomeRepos reads only the named repositories again, leaving the rest of
 // the list as it is.
 func (s *store) loadSomeRepos(a *App, names []string) tea.Cmd {
@@ -248,17 +322,18 @@ func (s *store) loadRuns(a *App, ctx context.Context, repos []string) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// loadPRs reads the open pull requests that concern you: one GraphQL request.
+// loadPRs reads the open pull requests that concern you: one GraphQL
+// request, and more only when you have more than 30 of a kind.
 func (s *store) loadPRs(a *App) tea.Cmd {
 	if !s.prsState.begin() {
 		return nil
 	}
 	return func() tea.Msg {
-		prs, err := a.client.MyPullRequests(context.Background())
+		prs, more, err := a.client.MyPullRequests(context.Background())
 		if err == nil {
 			a.client.Remember(snapshotPRs, prs)
 		}
-		return stPRsMsg{prs, err}
+		return stPRsMsg{prs, more, err}
 	}
 }
 
@@ -380,6 +455,8 @@ func (s *store) handle(a *App, msg tea.Msg) (tea.Cmd, bool) {
 		a.client.Remember(snapshotRepos, a.repos)
 		// Screens that list repos' runs can now know which repos to read.
 		return a.visit(), true
+	case stPushesMsg:
+		return s.gotPushes(a, m), true
 	case stSomeReposMsg:
 		s.reposState.busy, s.refreshing = false, 0
 		if m.err != nil {
@@ -461,7 +538,7 @@ func (s *store) handle(a *App, msg tea.Msg) (tea.Cmd, bool) {
 		if m.err != nil {
 			return a.flashCmd(nError, "Could not read your pull requests: "+m.err.Error()), true
 		}
-		s.prs = m.prs
+		s.prs, s.prsMore = m.prs, m.more
 		return nil, true
 	case stUsesMsg:
 		s.usesState.end(m.err)
@@ -575,25 +652,8 @@ func (a *App) ciRepos() []gh.Repo {
 	return out
 }
 
-// activeRepos are the repos the Actions tab covers by default: pinned ones
-// and your most recently pushed repos with workflows.
-func (a *App) activeRepos() []string {
-	var out []string
-	seen := map[string]bool{}
-	for _, f := range a.cfg.Favourites {
-		out = append(out, f)
-		seen[strings.ToLower(f)] = true
-	}
-	for _, r := range a.ciRepos() {
-		if len(out) >= a.cfg.RepoStatusLimit+len(a.cfg.Favourites) {
-			break
-		}
-		if !seen[strings.ToLower(r.FullName)] {
-			out = append(out, r.FullName)
-		}
-	}
-	return out
-}
+// pinnedRepos are the pinned repos, in the order they were pinned.
+func (a *App) pinnedRepos() []string { return slices.Clone(a.cfg.Favourites) }
 
 // needsApproval reports whether a run waits for you: a deployment you may
 // approve, or, in one of your repos, a run from an outside contributor

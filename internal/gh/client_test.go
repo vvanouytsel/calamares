@@ -3,8 +3,10 @@ package gh
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -254,5 +256,25 @@ func TestTheBudgetOnlyGoesDownWithinAWindow(t *testing.T) {
 	// A straggler from the old window changes nothing.
 	if r = laterRate(r, Rate{Limit: 5000, Remaining: 4100, Reset: reset}); r.Remaining != 4999 {
 		t.Fatalf("a response from the old window lowered the budget to %d", r.Remaining)
+	}
+}
+
+func TestSweepPushesReadsAPageOfPushTimes(t *testing.T) {
+	var asked string
+	c, _ := testClient(t, func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		asked = string(body)
+		_, _ = w.Write([]byte(`{"data":{"viewer":{"repositories":{"pageInfo":{"hasNextPage":true,"endCursor":"c2"},
+			"nodes":[{"nameWithOwner":"acme/webshop","pushedAt":"2026-10-30T09:00:00Z"},{"nameWithOwner":""}]}}}}`))
+	})
+	pushes, next, err := c.SweepPushes(t.Context(), "c1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pushes) != 1 || pushes[0].Repo != "acme/webshop" || pushes[0].At.Hour() != 9 || next != "c2" {
+		t.Errorf("pushes %+v, next %q", pushes, next)
+	}
+	if !strings.Contains(asked, `"after":"c1"`) || !strings.Contains(asked, "first: 100") {
+		t.Errorf("the page should start after c1, 100 at a time: %s", asked)
 	}
 }

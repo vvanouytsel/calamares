@@ -128,6 +128,63 @@ func (n sweepRepo) repo() Repo {
 	return r
 }
 
+// pushesQuery reads a page of your repositories with only when each was last
+// pushed to. Without the check states it is quick for GitHub to answer, so a
+// page holds 100 repos and costs 1 GraphQL point.
+const pushesQuery = `query($after: String) {
+  viewer { repositories(first: 100, after: $after,
+      affiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
+      ownerAffiliations: [OWNER, COLLABORATOR, ORGANIZATION_MEMBER],
+      orderBy: {field: PUSHED_AT, direction: DESC}) {
+    pageInfo { hasNextPage endCursor }
+    nodes { nameWithOwner pushedAt }
+  } }
+}`
+
+// Push is when a repository was last pushed to, on any branch.
+type Push struct {
+	Repo string
+	At   time.Time
+}
+
+// SweepPushes reads one page of when your repositories were last pushed to,
+// most recently pushed first, and returns the cursor of the next page (""
+// after the last one).
+func (c *Client) SweepPushes(ctx context.Context, after string) ([]Push, string, error) {
+	vars := map[string]any{"after": nil}
+	if after != "" {
+		vars["after"] = after
+	}
+	var page struct {
+		Viewer struct {
+			Repositories struct {
+				PageInfo struct {
+					HasNextPage bool   `json:"hasNextPage"`
+					EndCursor   string `json:"endCursor"`
+				} `json:"pageInfo"`
+				Nodes []struct {
+					NameWithOwner string    `json:"nameWithOwner"`
+					PushedAt      time.Time `json:"pushedAt"`
+				} `json:"nodes"`
+			} `json:"repositories"`
+		} `json:"viewer"`
+	}
+	if err := allowPartial(c.GraphQL(ctx, pushesQuery, vars, &page)); err != nil {
+		return nil, "", err
+	}
+	var out []Push
+	for _, n := range page.Viewer.Repositories.Nodes {
+		if n.NameWithOwner != "" {
+			out = append(out, Push{n.NameWithOwner, n.PushedAt})
+		}
+	}
+	next := ""
+	if info := page.Viewer.Repositories.PageInfo; info.HasNextPage {
+		next = info.EndCursor
+	}
+	return out, next, nil
+}
+
 // maxRepoBatch is how many repositories one SweepRepos request reads.
 const maxRepoBatch = 25
 

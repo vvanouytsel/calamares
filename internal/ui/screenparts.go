@@ -22,12 +22,18 @@ import (
 // words about what it lists, and the chips at the right (left out when
 // there is no room).
 func screenTitle(iconName, name, scope string, count int, chips []string, w int) string {
+	return screenTitleMore(iconName, name, scope, count, false, chips, w)
+}
+
+// screenTitleMore is screenTitle for a list GitHub holds more of than was
+// read: the count says so with a +.
+func screenTitleMore(iconName, name, scope string, count int, more bool, chips []string, w int) string {
 	head := " " + icoIn(iconName, cCyan) + sWhite.Bold(true).Render(name)
 	if scope != "" {
 		head += sDim.Render("  " + scope)
 	}
 	if count >= 0 {
-		head += sDim.Render(" · ") + sText.Render(fmt.Sprint(count))
+		head += sDim.Render(" · ") + sText.Render(countMore(count, more))
 	}
 	right := strings.Join(chips, " ") + " "
 	if len(chips) == 0 || width(head)+width(right)+1 > w {
@@ -570,4 +576,12 @@ func titleSig(s string) string {
 		}
 		return -1
 	}, ansi.Strip(s))
+}
+
+// countMore is a count with a + when there are more than were read: "100+".
+func countMore(n int, more bool) string {
+	if more {
+		return fmt.Sprintf("%d+", n)
+	}
+	return fmt.Sprint(n)
 }

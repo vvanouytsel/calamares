@@ -478,7 +478,7 @@ func (v *failingView) load(a *App, force bool) tea.Cmd {
 	var due []string
 	for _, repo := range v.repos(a) {
 		l := a.st.defaultState(repo)
-		if force || (now.Sub(l.at) > staleAfter && now.Sub(l.tried) > staleAfter) {
+		if force || a.readDue(l, repo, now, staleAfter) {
 			due = append(due, repo)
 		}
 	}

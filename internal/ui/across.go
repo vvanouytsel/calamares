@@ -304,26 +304,30 @@ func (v *activityView) ID() int             { return v.id }
 func (v *activityView) Crumb() string       { return tabNames[v.place] }
 func (v *activityView) Init(a *App) tea.Cmd { return nil }
 
-// The repos the tab can cover.
+// KeepsUp: Actions reads its repos at their own pace whatever the live
+// setting; see coverage.go.
+func (v *activityView) KeepsUp() bool { return v.place == tabActions }
+
+// The repos the tab can cover; "" is all of them.
 const (
-	scopeActive    = "active"    // pinned and most recently pushed
 	scopeAll       = "all"       // every repo with workflows
+	scopePinned    = "pinned"    // the pinned ones
 	scopeConsumers = "consumers" // those that call your reusable workflows and actions
 )
 
 // repos are the repositories whose runs the tab shows.
 func (v *activityView) repos(a *App) []string {
 	switch v.scope {
-	case scopeAll:
-		var out []string
-		for _, r := range a.ciRepos() {
-			out = append(out, r.FullName)
-		}
-		return out
+	case scopePinned:
+		return a.pinnedRepos()
 	case scopeConsumers:
 		return a.consumers()
 	}
-	return a.activeRepos()
+	var out []string
+	for _, r := range a.ciRepos() {
+		out = append(out, r.FullName)
+	}
+	return out
 }
 
 // consumers are the repos whose workflow files use a reusable workflow or an
@@ -364,18 +368,18 @@ func (v *activityView) Loading(a *App) bool {
 }
 
 // repoListStale is how old the repo list may be before refreshing the tab
-// reads it again (it says which repos are most active).
+// reads it again in full; the push check keeps the push times up to date
+// in between.
 const repoListStale = 24 * time.Hour
 
-// Refresh reads the runs of every repo in the tab when asked. While live,
-// repos with running work are read every 15 seconds and the rest every 2
-// minutes. Which repos those are comes from the repo list, read first if it
-// isn't known yet.
+// Refresh reads the runs of every repo in the tab when asked, and otherwise
+// those due at the pace of how much goes on in them (see coverage.go).
+// Which repos those are comes from the repo list, read first if it isn't
+// known yet.
 func (v *activityView) Refresh(a *App, force bool) tea.Cmd {
 	now := time.Now()
 	runs := v.load(a, force && now.Sub(a.st.reposState.at) > repoListStale, func(repo string) bool {
-		tried := now.Sub(a.st.runState(repo).tried)
-		return force || tried > trackedEvery || (repoActive(a, repo) && tried > activeEvery)
+		return force || a.readDue(a.st.runState(repo), repo, now, 0)
 	})
 	if force {
 		v.shown = nil // what you asked to see again is not held back
@@ -443,23 +447,28 @@ func (v *activityView) load(a *App, readRepoList bool, due func(repo string) boo
 	if !a.st.loaded || (readRepoList && only == nil) {
 		cmds = append(cmds, a.st.loadRepos(a))
 	}
-	ctx := context.Background()
-	if v.scope == scopeAll {
-		ctx = gh.Background(ctx) // hundreds of repos: spaced out
-	}
-	if v.scope == scopeConsumers {
-		cmds = append(cmds, a.st.loadUses(a, false))
-	}
-	var repos []string
+	// The workflow files say which repos run on a schedule (and, for the
+	// consumers, who calls what); they are read once a day.
+	cmds = append(cmds, a.st.loadUses(a, false))
+	// Busy repos and the ones worked on lately are read first; the untouched
+	// ones, which can be hundreds, spaced out behind them.
+	now := time.Now()
+	var first, later []string
 	for _, repo := range v.repos(a) {
 		if only != nil && !only[repo] {
 			continue
 		}
-		if due(repo) {
-			repos = append(repos, repo)
+		if !due(repo) {
+			continue
+		}
+		if a.readInfoOf(repo, now).group == readUntouched {
+			later = append(later, repo)
+		} else {
+			first = append(first, repo)
 		}
 	}
-	return tea.Batch(append(cmds, a.st.loadRuns(a, ctx, repos))...)
+	ctx := context.Background()
+	return tea.Batch(append(cmds, a.st.loadRuns(a, ctx, first), a.st.loadRuns(a, gh.Background(ctx), later))...)
 }
 
 // RefreshRepo re-reads one repo's runs, after an action in it, and what the
@@ -472,10 +481,8 @@ func (v *activityView) RefreshRepo(a *App, repo string) tea.Cmd {
 	return runs
 }
 
-const (
-	activeEvery  = 15 * time.Second
-	trackedEvery = 2 * time.Minute
-)
+// activeEvery is how often the runners of a busy view are read again.
+const activeEvery = 15 * time.Second
 
 // repoActive reports whether repo has a run that hasn't finished.
 func repoActive(a *App, repo string) bool {
@@ -490,18 +497,17 @@ func repoActive(a *App, repo string) bool {
 func (v *activityView) pickScope(a *App) tea.Cmd {
 	current := v.scope
 	if current == "" {
-		current = scopeActive
+		current = scopeAll
 	}
-	n := len(a.ciRepos())
 	consumers := "the repos whose workflow files use one of yours"
 	if a.st.usesState.at.IsZero() {
 		consumers += " · reads the workflow files first"
 	} else {
-		consumers = fmt.Sprintf("%d repos whose workflow files use one of yours · 1 request each", len(a.consumers()))
+		consumers = repositories(len(a.consumers())) + " whose workflow files use one of yours"
 	}
 	items := []pickItem{
-		{value: scopeActive, label: "your active repos", note: sDim.Render(fmt.Sprintf("pinned + %d most recently pushed · 1 request each", a.cfg.RepoStatusLimit))},
-		{value: scopeAll, label: "all repos with workflows", note: sDim.Render(fmt.Sprintf("%d repos · 1 request each, spaced out", n))},
+		{value: scopeAll, label: "all repos with workflows", note: sDim.Render(repositories(len(a.ciRepos())) + " · each read at the pace of how much goes on in it")},
+		{value: scopePinned, label: "pinned repos", note: sDim.Render(repositories(len(a.pinnedRepos())))},
 		{value: scopeConsumers, label: "repos that call your workflows and actions", note: sDim.Render(consumers)},
 	}
 	return openModal(newPicker("actions-scope", "Show runs of", current, items, func(s string) tea.Cmd {
@@ -848,14 +854,22 @@ func (v *activityView) Render(a *App, w, h int) string {
 	if v.held > 0 {
 		scope += fmt.Sprintf(" · ↑ %d new, n shows", v.held)
 	}
-	which := fmt.Sprintf("your %d active repos", len(repos))
+	which := fmt.Sprintf("all %d repos with workflows", len(repos))
 	switch v.scope {
-	case scopeAll:
-		which = fmt.Sprintf("all %d repos with workflows", len(repos))
+	case scopePinned:
+		which = fmt.Sprintf("%d pinned repos", len(repos))
 	case scopeConsumers:
 		which = fmt.Sprintf("%d repos that call yours", len(repos))
 	}
-	scopeChip := " " + chip("p", "repos: "+which+" ▾", v.scope != "" && v.scope != scopeActive) + "   "
+	scopeChip := " " + chip("p", "repos: "+which+" ▾", v.scope != "" && v.scope != scopeAll) + "   "
+	// Under it, on Actions, how many of those repos are busy, worked on
+	// lately or untouched, which says how often each is read.
+	coverage := func(lw int) (string, int) {
+		if v.place != tabActions {
+			return "", 0
+		}
+		return "\n " + clip(a.coverageWords(repos, now), lw-1), 1
+	}
 	if s := v.sub(); s != nil && v.place == tabPlatform {
 		return v.renderPlatform(a, s, items, w, h)
 	}
@@ -863,10 +877,11 @@ func (v *activityView) Render(a *App, w, h int) string {
 		return listWithPanel(a, w, h,
 			[]string{screenTitle(tabIcons[v.place], v.viewLabel(), s.coverage(a), -1, s.chips(a), w), viewStrip(items, v.at(), w)},
 			func(lw, lh int) string {
+				cov, n := coverage(lw)
 				if c, ok := s.(interface{ renderList(*App, int, int) string }); ok {
-					return scopeChip + s.listHead(a) + "\n" + c.renderList(a, lw, lh-1)
+					return scopeChip + s.listHead(a) + cov + "\n" + c.renderList(a, lw, lh-1-n)
 				}
-				return scopeChip + s.listHead(a) + "\n" + s.table().Render(lw, lh-1)
+				return scopeChip + s.listHead(a) + cov + "\n" + s.table().Render(lw, lh-1-n)
 			},
 			func(pw, ph int) []string { return s.panel(a, pw, ph) })
 	}
@@ -876,7 +891,10 @@ func (v *activityView) Render(a *App, w, h int) string {
 	}
 	return listWithPanel(a, w, h,
 		[]string{screenTitle(tabIcons[v.place], v.viewLabel(), scope, -1, chips, w), viewStrip(items, v.at(), w)},
-		func(lw, lh int) string { return scopeLine + "\n" + v.withAfterglow(a, all, now, lw, lh-1) },
+		func(lw, lh int) string {
+			cov, n := coverage(lw)
+			return scopeLine + cov + "\n" + v.withAfterglow(a, all, now, lw, lh-1-n)
+		},
 		func(pw, ph int) []string {
 			if x, ok := v.selected(); ok {
 				return a.runPanel(x, pw, ph)
@@ -1070,12 +1088,12 @@ func (v *activityView) renderPlatform(a *App, s actSub, items []stripItem, w, h 
 func (v *activityView) reposWords(a *App) string {
 	n := len(v.repos(a))
 	switch v.scope {
-	case scopeAll:
-		return fmt.Sprintf("all %d %s with workflows", n, plural("repository", n))
+	case scopePinned:
+		return fmt.Sprintf("the %d pinned %s", n, plural("repository", n))
 	case scopeConsumers:
 		return fmt.Sprintf("the %d %s that call yours", n, plural("repository", n))
 	}
-	return fmt.Sprintf("your %d active %s", n, plural("repository", n))
+	return fmt.Sprintf("all %d %s with workflows", n, plural("repository", n))
 }
 
 // stateLine says how a list is shown: "Sorted by most used · Grouped by source".

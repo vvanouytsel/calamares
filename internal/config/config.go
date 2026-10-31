@@ -19,8 +19,6 @@ type Config struct {
 	Favourites []string `yaml:"favourites"`
 	// RefreshSeconds is how often views with running work refresh (min 2).
 	RefreshSeconds int `yaml:"refreshSeconds"`
-	// RepoStatusLimit is how many repos get their latest runs fetched in the repo list.
-	RepoStatusLimit int `yaml:"repoStatusLimit"`
 	// ASCII is the old way to say icons: ascii; it is still read, and means that.
 	ASCII bool `yaml:"ascii,omitempty"`
 	// Icons is "nerd" for the icons of a Nerd Font (the default when the
@@ -67,7 +65,7 @@ func (c *Config) Dir() string {
 
 // Default returns the built-in settings.
 func Default() *Config {
-	return &Config{Host: "github.com", RefreshSeconds: 3, RepoStatusLimit: 40}
+	return &Config{Host: "github.com", RefreshSeconds: 3}
 }
 
 // Path returns where the config file lives on this OS:
@@ -109,9 +107,6 @@ func Load() (*Config, error) {
 	}
 	if c.RefreshSeconds < 2 {
 		c.RefreshSeconds = 2
-	}
-	if c.RepoStatusLimit <= 0 {
-		c.RepoStatusLimit = 40
 	}
 	c.NormalizeIcons()
 	c.normalizeCompare()

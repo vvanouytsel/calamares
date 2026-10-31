@@ -44,8 +44,9 @@ matrix legs passed. Logs fold by step, highlight errors and can be searched.
 <td valign="top">
 
 **Gentle on your API quota**<br>
-Nothing polls behind your back. One GraphQL sweep reads all your repos, responses are cached and
-revalidated, and screens open instantly from the last session.
+Every repo is covered, each read at the pace of how much goes on in it: busy ones every 15 seconds,
+untouched ones every 20 minutes, and a push wakes a repo at once. Unchanged answers cost nothing, and
+screens open instantly from the last session.
 
 </td>
 </tr>

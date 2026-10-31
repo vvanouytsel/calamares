@@ -5,7 +5,9 @@ Calamares is a terminal command center for GitHub, written in Go with Bubble Tea
 
 ## After every change
 
-- Run `go vet ./...` and `go test ./...`.
+- While working, run the tests of what you changed (`go test ./internal/ui -run 'Coverage|Push'`, or the
+  package you touched); run `go vet ./...` and the whole `go test ./...` once before each commit. Go skips
+  packages that did not change, but `internal/ui` is one package, so its full run takes a while.
 - Rebuild the binary: `go build -o bin/calamares.exe ./cmd/calamares`, and say how to start it.
 
 ## Mockup first
