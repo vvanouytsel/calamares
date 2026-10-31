@@ -95,7 +95,6 @@ func TestClosingAnIssueAsNotPlannedSendsTheReason(t *testing.T) {
 		t.Fatalf("an optional comment should be asked, modal is %T", a.modal)
 	}
 	pressKeys(a, tea.KeyMsg{Type: tea.KeyCtrlS})
-	time.Sleep(100 * time.Millisecond)
 	if body := rec.body("/repos/acme/webshop/issues/9"); !strings.Contains(body, `"state_reason":"not_planned"`) {
 		t.Errorf("close request: %q", body)
 	}
@@ -123,7 +122,6 @@ func TestANewIssueIsCreatedFromTheForm(t *testing.T) {
 	if !strings.Contains(f.err, "required") && a.modal != nil {
 		// a title is typed: the form was sent
 	}
-	time.Sleep(150 * time.Millisecond)
 	if body := rec.body("/repos/acme/webshop/issues"); !strings.Contains(body, `"title":"Broken"`) {
 		t.Errorf("create request: %q", body)
 	}

@@ -63,7 +63,6 @@ func TestBehindBranchIsUpdatedFromTheMergeBoxKey(t *testing.T) {
 		t.Fatalf("B should ask how to update, modal is %T", a.modal)
 	}
 	pressKeys(a, tea.KeyMsg{Type: tea.KeyEnter}, runes("y"))
-	time.Sleep(100 * time.Millisecond)
 	if body := rec.body("/repos/o/r/pulls/12/update-branch"); !strings.Contains(body, `"expected_head_sha":"abc123"`) {
 		t.Errorf("update-branch request: %q", body)
 	}
@@ -131,7 +130,6 @@ func TestLineCommentsAreHeldAndGoOutWithOneReview(t *testing.T) {
 		t.Errorf("the confirmation should mention the pending comments:\n%s", screen(a))
 	}
 	pressKeys(a, runes("y"))
-	time.Sleep(100 * time.Millisecond)
 	body := rec.body("/repos/o/r/pulls/12/reviews")
 	for _, want := range []string{`"event":"APPROVE"`, `"body":"needs a test"`, `"path":"src/deploy.sh"`} {
 		if !strings.Contains(body, want) {
