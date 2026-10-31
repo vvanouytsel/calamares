@@ -170,7 +170,7 @@ func (v *issueView) Render(a *App, w, h int) string {
 		}
 		v.built = convBuild{inner, v.ver}
 	}
-	body := box(title("Conversation", "r replies · m comments", -1, ""), strings.Join(v.list.render(bw-2, bodyH-2), "\n"), bw, bodyH, cFrame)
+	body := box(title("Conversation", "W comments or replies", -1, ""), strings.Join(v.list.render(bw-2, bodyH-2), "\n"), bw, bodyH, cFrame)
 	if side != nil {
 		rows := strings.Split(body, "\n")
 		lines := make([]string, bodyH)

@@ -268,7 +268,7 @@ func (c *conversation) render(a *App, v *prView, w, h int) string {
 	}
 	scope := ""
 	if c.loaded {
-		scope = "r replies · m comments"
+		scope = "W comments or replies"
 	}
 	return box(title("Conversation", scope, -1, ""), strings.Join(lines, "\n"), w, h, cFrame)
 }
