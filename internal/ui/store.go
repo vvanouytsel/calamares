@@ -87,6 +87,8 @@ type store struct {
 
 	times timeData // what the Time view reads
 
+	stats statsData // what Records reads besides the runs of the Time view
+
 	ghStatus statusData // what GitHub's status page says
 }
 
@@ -179,6 +181,7 @@ func (s *store) seed(a *App) {
 		}
 	}
 	s.seedTimes(a)
+	s.seedStats(a)
 	var uses usesSnapshot
 	if at, ok := a.client.Recall(snapshotUses, &uses); ok {
 		s.uses, s.schedules, s.scheduled, s.usesRepos, s.usesState.at = uses.Uses, uses.Schedules, uses.Scheduled, uses.Repos, at
@@ -515,6 +518,8 @@ func (s *store) handle(a *App, msg tea.Msg) (tea.Cmd, bool) {
 		return nil, true
 	case runTimesMsg:
 		return s.gotRunTimes(a, m), true
+	case statsStepMsg:
+		return s.gotStatsStep(a, m), true
 	case statusMsg:
 		return a.gotStatus(m), true
 	case warningsMsg:

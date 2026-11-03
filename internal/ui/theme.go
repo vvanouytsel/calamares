@@ -103,6 +103,7 @@ var icons = map[string][2]string{
 	"compass":   {"", "◈"},
 	"question":  {"", "?"},
 	"archive":   {"\U000f003c", "▤"},
+	"moon":      {"\uf186", "☾"},
 }
 
 // icon returns the icon for name followed by a space, or "" when the plain
@@ -264,14 +265,19 @@ type stripItem struct {
 // not shift when you move. It changes at once: moving between views has no
 // animation, so it never feels behind your keys.
 func viewStrip(items []stripItem, active, w int) string {
+	if ascii {
+		return viewStripKey(items, active, w, "tab")
+	}
+	return viewStripKey(items, active, w, "tab ⇥")
+}
+
+// viewStripKey is viewStrip with key as the key that moves along it.
+func viewStripKey(items []stripItem, active, w int, key string) string {
 	var sig string
 	for _, it := range items {
 		sig += it.Label + "|"
 	}
-	hint := sDim.Render("tab ⇥")
-	if ascii {
-		hint = sDim.Render("tab")
-	}
+	hint := sDim.Render(key)
 	room := w - width(hint) - 2
 	if pillsOn() {
 		room -= len(items) + 2 // the dividers and the round ends

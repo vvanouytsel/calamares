@@ -357,7 +357,7 @@ var keyMap = map[string]string{
 	"J": "select down", "K": "select up", " ": "fold, tick or select",
 	// Look and go: always safe.
 	"o": "open in the browser", "y": "copy", "l": "logs", "c": "workflow file", "d": "diff",
-	"t": "how times show", "p": "pipeline", "h": "its runs", "r": "its repo", "#": "its pull request",
+	"t": "how times show, the period", "p": "pipeline", "h": "its runs", "r": "its repo", "#": "its pull request",
 	"s": "sort", "g": "group", "u": "only mine", "z": "layout", "v": "fold or show all",
 	"e": "next error", "n": "next match, new runs", "N": "previous match", "a": "set aside",
 	"w": "watch", "f": "follow", "m": "which repos", "b": "pick a branch", "*": "pin",

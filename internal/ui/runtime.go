@@ -35,6 +35,27 @@ type runTime struct {
 	Called     []string     `json:"c,omitempty"` // the reusable workflows it called, by sharedKey
 	Jobs       []gh.JobTime `json:"j,omitempty"`
 	Read       bool         `json:"d,omitempty"` // its jobs were read
+	// What Records tells about the run, renewed whenever the run is listed.
+	Name       string        `json:"nm,omitempty"`
+	Number     int           `json:"n,omitempty"`
+	Conclusion string        `json:"k,omitempty"`
+	Actor      string        `json:"u,omitempty"`
+	Branch     string        `json:"b,omitempty"`
+	Took       time.Duration `json:"du,omitempty"` // from its start to its end
+}
+
+// note keeps what Records tells about run r.
+func (rt *runTime) note(r gh.Run) {
+	rt.Name, rt.Number, rt.Conclusion, rt.Actor, rt.Branch = r.Name, r.RunNumber, r.Conclusion, r.Actor.Login, r.HeadBranch
+	rt.Took = r.Duration(r.UpdatedAt)
+}
+
+// run is the run as far as rt knows it, enough to open it.
+func (rt *runTime) run() gh.Run {
+	r := gh.Run{ID: rt.ID, NodeID: rt.NodeID, Name: rt.Name, RunNumber: rt.Number, RunAttempt: rt.Attempt, Status: "completed",
+		Conclusion: rt.Conclusion, HeadBranch: rt.Branch, WorkflowID: rt.WorkflowID, Path: rt.Path, CreatedAt: rt.At}
+	r.Actor.Login = rt.Actor
+	return r
 }
 
 // timeData is what the store holds for the Time view.
@@ -115,10 +136,12 @@ func readRunTimes(a *App, repos []string, known map[int64]runTime) runTimesMsg {
 		}
 		for _, r := range runs {
 			if old, ok := known[r.ID]; ok && old.Read && old.Attempt == r.RunAttempt {
+				old.note(r)
 				m.runs = append(m.runs, &old)
 				continue
 			}
 			rt := &runTime{Repo: repo, ID: r.ID, NodeID: r.NodeID, WorkflowID: r.WorkflowID, Path: r.Path, At: r.CreatedAt, Attempt: r.RunAttempt}
+			rt.note(r)
 			seen := map[string]bool{}
 			for _, ref := range r.ReferencedWorkflows {
 				if rp, file, _ := ref.Split(); rp != "" && !seen[sharedKey(rp, file)] {

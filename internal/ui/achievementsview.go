@@ -19,9 +19,10 @@ const (
 	achCase = iota
 	achAlmost
 	achTimeline
+	achRecords
 )
 
-var achViews = []string{"Trophy case", "Almost there", "Timeline"}
+var achViews = []string{"Trophy case", "Almost there", "Timeline", "Records"}
 
 // medalCell is the cells a medal takes in the trophy case, with the room
 // around it: a cell of margin on each side.
@@ -37,6 +38,7 @@ type achievementsView struct {
 	offset   int    // the first line of the case on display
 	slots    []medalSlot
 	timeline *Table
+	rec      recordsState
 }
 
 // medalSlot is where a medal was drawn: its row of medals, its column and
@@ -57,11 +59,17 @@ func newAchievementsView(a *App) *achievementsView {
 	)}
 }
 
-func (v *achievementsView) ID() int                            { return v.id }
-func (v *achievementsView) Crumb() string                      { return "Achievements" }
-func (v *achievementsView) ViewName() string                   { return achViews[v.view] }
-func (v *achievementsView) Init(a *App) tea.Cmd                { return nil }
-func (v *achievementsView) Refresh(a *App, force bool) tea.Cmd { return nil }
+func (v *achievementsView) ID() int             { return v.id }
+func (v *achievementsView) Crumb() string       { return "Achievements" }
+func (v *achievementsView) ViewName() string    { return achViews[v.view] }
+func (v *achievementsView) Init(a *App) tea.Cmd { return nil }
+
+func (v *achievementsView) Refresh(a *App, force bool) tea.Cmd {
+	if v.view == achRecords {
+		return v.loadRecords(a, force)
+	}
+	return nil
+}
 
 // shown are the achievements of the view on display, in their order.
 func (v *achievementsView) shown(a *App) []*achievement {
@@ -75,7 +83,7 @@ func (v *achievementsView) shown(a *App) []*achievement {
 		}
 		sort.SliceStable(out, func(i, j int) bool { return a.ach.fraction(out[i]) > a.ach.fraction(out[j]) })
 		return out
-	case achTimeline:
+	case achTimeline, achRecords:
 		return nil
 	}
 	return achievements
@@ -83,7 +91,10 @@ func (v *achievementsView) shown(a *App) []*achievement {
 
 // selected is the achievement under the cursor, if any.
 func (v *achievementsView) selected(a *App) *achievement {
-	if v.view == achTimeline {
+	switch v.view {
+	case achRecords:
+		return nil
+	case achTimeline:
 		r := v.timeline.Selected()
 		if r == nil {
 			return nil
@@ -138,16 +149,22 @@ func (v *achievementsView) sync(a *App) {
 
 func (v *achievementsView) Keys(a *App) []Binding {
 	var bs []Binding
-	if v.view == achTimeline {
+	switch v.view {
+	case achRecords:
+		bs = append(bs, v.recordKeys(a)...)
+	case achTimeline:
 		bs = append(bs, v.timeline.moveKeys())
-	} else {
+	default:
 		bs = append(bs, Binding{Keys: []string{"left", "right", "up", "k", "down", "j", "home", "end", "pgup", "pgdown"},
 			Label: "←↑↓→", Desc: "move", Help: "move through the medals · g G first / last", Group: groupMove,
 			Do: func(k string) tea.Cmd { v.move(a, k); return nil }})
 	}
-	bs = append(bs, viewKeys("next view", "the next view: trophy case, almost there, timeline", "ACHIEVEMENTS", func(d int) tea.Cmd {
+	bs = append(bs, viewKeys("next view", "the next view: trophy case, almost there, timeline, records", "ACHIEVEMENTS", func(d int) tea.Cmd {
 		v.view = (v.view + d + len(achViews)) % len(achViews)
 		v.offset = 0
+		if v.view == achRecords {
+			return v.loadRecords(a, false)
+		}
 		return nil
 	}))
 	if x := v.selected(a); x != nil && areaPlaces[x.area] >= 0 {
@@ -219,6 +236,9 @@ func (v *achievementsView) nearest(s medalSlot, rows int) string {
 }
 
 func (v *achievementsView) Render(a *App, w, h int) string {
+	if v.view == achRecords {
+		return v.renderRecords(a, w, h)
+	}
 	head := []string{screenTitle("trophy", "Achievements", "what you did with Calamares", -1, v.chips(a), w)}
 	head = append(head, v.hero(a, w, h)...)
 	head = append(head, viewStrip(v.strip(a), v.view, w))
@@ -272,6 +292,7 @@ func (v *achievementsView) strip(a *App) []stripItem {
 		{Label: achViews[achCase], Icon: "trophy", Count: fmt.Sprint(len(achievements))},
 		{Label: achViews[achAlmost], Icon: "gauge", Count: fmt.Sprint(almost), Quiet: almost == 0},
 		{Label: achViews[achTimeline], Icon: "history", Count: fmt.Sprint(events), Quiet: events == 0},
+		{Label: achViews[achRecords], Icon: "star"},
 	}
 }
 
@@ -553,6 +574,9 @@ func (v *achievementsView) progressCards(a *App, p *panelText, x *achievement) {
 }
 
 func (v *achievementsView) Explain(a *App) explained {
+	if v.view == achRecords {
+		return recordsExplained()
+	}
 	return explained{title: "What Achievements shows", items: []explanation{
 		{"Level", "XP adds up to a level; every few levels bring a new title. Each tier you reach is worth XP: bronze 10, silver 25, gold 50, platinum 100."},
 		{"Medals", "What is counted has up to four tiers, bronze, silver, gold and platinum; the rest is earned once, at one tier. A grey medal is not earned yet; a violet one with a question mark is a secret until you find it."},
