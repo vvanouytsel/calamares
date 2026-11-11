@@ -164,6 +164,8 @@ type App struct {
 	keyAt      time.Time // when the last key came
 	// reads holds how much goes on in each repo; see readInfoOf.
 	reads readCache
+	// people are the people whose page you opened last, newest first.
+	people []string
 
 	client  *gh.Client
 	cfg     *config.Config

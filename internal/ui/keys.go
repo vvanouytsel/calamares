@@ -361,6 +361,7 @@ var keyMap = map[string]string{
 	"s": "sort", "g": "group", "u": "only mine", "z": "layout", "v": "fold or show all",
 	"e": "next error", "n": "next match, new runs", "N": "previous match", "a": "set aside",
 	"w": "watch", "f": "follow", "m": "which repos", "b": "pick a branch", "*": "pin",
+	"~": "the person's page",
 	"=": "zoom in", "-": "zoom out", "0": "fit", "Z": "full screen", "{": "previous file", "}": "next file",
 	// Change GitHub: ask first.
 	"A": "approve", "C": "request changes", "M": "merge", "B": "bring the branch up to date",

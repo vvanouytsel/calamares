@@ -636,6 +636,7 @@ func (v *runView) Keys(a *App) []Binding {
 	bs = append(bs,
 		Binding{Keys: []string{"l"}, Desc: "logs", Help: "the log of the run, job or step under the cursor", Do: do(func() tea.Cmd { return v.openLogs(a) })},
 		a.runRepoKey(v.repo, v.run),
+		a.personKey(v.run.Actor.Login),
 		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open the run, or the job under the cursor, on GitHub", Do: do(func() tea.Cmd {
 			if job := v.selectedJob(); job != nil {
 				if it, _ := v.selected(); it.kind != tGroup {

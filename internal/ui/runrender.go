@@ -42,8 +42,11 @@ func (v *runView) Render(a *App, w, h int) string {
 	for _, l := range titleLines[1:] {
 		sum += "\n" + bar + " " + sWhite.Render(l)
 	}
-	facts := bar + " " + ico("commit") + sTan.Render(sha) + "   " +
-		fact("user", v.run.Actor.Login) + trig + "   "
+	who := fact("user", v.run.Actor.Login)
+	if gh.ValidLogin(v.run.Actor.Login) {
+		who += " " + keycap("~")
+	}
+	facts := bar + " " + ico("commit") + sTan.Render(sha) + "   " + who + trig + "   "
 	if label := v.attemptLabel(); label != "" {
 		facts += label + "   "
 	}

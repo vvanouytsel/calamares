@@ -169,6 +169,7 @@ func (v *commitsView) Keys(a *App) []Binding {
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "runs and changes", Do: do(func() tea.Cmd { return a.push(newCommitView(a, v.repo, c)) })},
 			Binding{Keys: []string{"v"}, Desc: "whole message", Help: "the whole commit message", Do: do(func() tea.Cmd { return commitMessage(c) })},
+			a.personKey(c.Author),
 			Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(c.URL) })},
 			Binding{Keys: []string{"y"}, Desc: "copy sha", Help: "copy the commit sha", Do: do(func() tea.Cmd { return a.copyText(c.SHA, "commit SHA") })},
 		)

@@ -276,7 +276,7 @@ func (v *pullsView) Keys(a *App) []Binding {
 	}
 	bs := append(pre, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open", Do: do(func() tea.Cmd { return a.push(newPRView(a, pr.Repo, pr.Number)) })})
 	bs = append(bs, a.prKeys(pr.Repo, pr.Number, pr.Title)...)
-	bs = append(bs, a.prAsideBinding(pr))
+	bs = append(bs, a.prAsideBinding(pr), a.personKey(pr.Author))
 	bs = append(bs, Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(pr.URL) })})
 	bs = append(bs, v.tickKeys()...)
 	bs = append(bs,
