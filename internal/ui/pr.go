@@ -393,6 +393,7 @@ func (v *prView) Keys(a *App) []Binding {
 	}
 	bs = append(bs, v.actionKeys(a)...)
 	bs = append(bs,
+		a.personKey(v.pr.Author),
 		Binding{Keys: []string{"o"}, Desc: "open in browser", Help: "open in the browser", Do: do(func() tea.Cmd { return a.openURL(v.pr.URL) })},
 		Binding{Keys: []string{"y"}, Desc: "copy link", Help: "copy the link", Do: do(func() tea.Cmd { return a.copyText(v.pr.URL, "pull request URL") })},
 	)

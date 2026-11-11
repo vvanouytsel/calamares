@@ -169,7 +169,7 @@ func (v *issuesView) Keys(a *App) []Binding {
 	if i, ok := v.selected(a); ok {
 		bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open", Do: do(func() tea.Cmd { return a.push(newIssueView(a, i.Repo, i.Number)) })})
 		bs = append(bs, a.issueKeys(i)...)
-		bs = append(bs, a.issueAsideBinding(i))
+		bs = append(bs, a.issueAsideBinding(i), a.personKey(i.Author))
 	}
 	newIn := v.repo
 	if i, ok := v.selected(a); ok && newIn == "" {

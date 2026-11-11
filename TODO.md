@@ -8,6 +8,8 @@ Tasks are picked up from the top. When one is finished it moves to "Done" at the
 
 ## Done
 
+- A person's page: `~` on anything with a person, or `@sam` in the `:` box, lists what they did in the last 14 days in the repos you can see (pull requests opened, merged and closed, runs and how they went, commits per repo and day, reviews, issues), with views per kind, `u` for only what involves you, and a panel with the review requests between you, what they did per repository and their activity per day.
+
 - Every key means one thing on every screen (written down in `keyMap`, checked by a test): lowercase keys only look, go somewhere, copy, sort or filter; capitals change GitHub and ask first (`A` approve, `X` cancel/close/delete, `W` comment, `T` labels, `+` new). Labels say what you get ("diff vs #212 ✓", "times vs usual"), follow is on while a run goes, rare actions live in the `.` menu, the help lists the capitals apart, and someone who knew the old keys is told once what moved.
 
 - Actions covers every repo with workflows, each read at the pace of how much goes on in it (busy every 15 s, worked on lately every 2 min, untouched every 20 min), woken by a push check every 2 minutes and by schedules that come due, and slower when the requests left run low; it keeps itself up to date whatever the live setting. Your pull requests and issues read up to 100 of each kind, with a `+` when there are more.

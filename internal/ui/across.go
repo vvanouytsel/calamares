@@ -562,7 +562,7 @@ func (v *activityView) Keys(a *App) []Binding {
 	if x, ok := v.selected(); ok {
 		bs = append(bs, Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open run",
 			Do: do(func() tea.Cmd { return a.push(newRunView(a, x.repo, x.run)) })})
-		acts := a.runKeys(x.repo, x.run)
+		acts := append(a.runKeys(x.repo, x.run), a.personKey(x.run.Actor.Login))
 		bs = append(bs, without(acts, "o", "y")...)
 		bs = append(bs, Binding{Keys: []string{"l"}, Desc: "logs", Do: do(func() tea.Cmd { return a.push(newLogView(a, x.repo, x.run, nil, 0)) })},
 			a.runRepoKey(x.repo, x.run))

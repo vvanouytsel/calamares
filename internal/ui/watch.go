@@ -392,6 +392,7 @@ func (v *watchView) Keys(a *App) []Binding {
 		bs = append(bs,
 			Binding{Keys: []string{"enter", "right"}, Label: "enter", Desc: "open run", Do: do(func() tea.Cmd { return a.push(newRunView(a, x.repo, x.run)) })},
 			Binding{Keys: []string{"w"}, Desc: "stop watching", Do: do(func() tea.Cmd { return a.watch(x.repo, x.run) })},
+			a.personKey(x.run.Actor.Login),
 		)
 		acts := a.runKeys(x.repo, x.run)
 		bs = append(bs, without(acts, "o", "y")...)

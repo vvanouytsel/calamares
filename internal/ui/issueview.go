@@ -107,7 +107,7 @@ func (v *issueView) Keys(a *App) []Binding {
 			})
 		})
 	}
-	bs = append(bs, reply)
+	bs = append(bs, reply, a.personKey(ref.author))
 	bs = append(bs, a.issueKeys(v.issue())...)
 	bs = append(bs, a.newIssueKey(v.repo))
 	return grouped("AN ISSUE", bs...)

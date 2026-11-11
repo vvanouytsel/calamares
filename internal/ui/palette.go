@@ -80,6 +80,7 @@ const (
 	sugSearch
 	sugPlace
 	sugIssue
+	sugPerson
 )
 
 type suggestion struct {
@@ -127,7 +128,7 @@ func (a *App) openSearch(list bool) tea.Cmd {
 	a.savedFilter = ""
 	a.suggest = suggestState{}
 	a.input.SetValue("")
-	a.input.Placeholder = "repo, workflow, pull request, or :command"
+	a.input.Placeholder = "repo, workflow, pull request, @person or :command"
 	if f, ok := a.top().(Filterer); ok && list {
 		a.listSearch = true
 		a.savedFilter = f.FilterValue()
@@ -166,6 +167,7 @@ func (p *palette) update(a *App, q string) {
 			items = append(items, suggestion{kind: sugCommand, label: ":" + c.name, desc: c.desc, cmd: c.name, score: s + 25, idx: shift(idx, 1)})
 		}
 	}
+	items = append(items, a.peopleMatching(q)...)
 	for _, pr := range a.st.prs {
 		label := fmt.Sprintf("%s #%d %s", a.short(pr.Repo), pr.Number, pr.Title)
 		if s, idx, ok := fuzzy(q, label); ok && q != "" {
@@ -288,7 +290,7 @@ func shift(idx []int, n int) []int {
 
 var groupNames = map[suggKind]string{
 	sugCommand: "GO TO", sugPR: "YOUR PULL REQUESTS", sugRepo: "YOUR REPOS",
-	sugWorkflow: "WORKFLOWS", sugSearch: "ON GITHUB", sugPlace: "PLACES", sugIssue: "ISSUES",
+	sugWorkflow: "WORKFLOWS", sugSearch: "ON GITHUB", sugPlace: "PLACES", sugIssue: "ISSUES", sugPerson: "PEOPLE",
 }
 
 func (p *palette) render(a *App, w int) string {
@@ -504,6 +506,8 @@ func (a *App) execute(line string) tea.Cmd {
 			return a.setTab(n)
 		case sugRepo, sugSearch:
 			return a.openRepo(it.repo, "", 0)
+		case sugPerson:
+			return a.openPerson(it.cmd)
 		case sugWorkflow:
 			return a.openRepo(it.repo, "", it.wf.ID)
 		case sugPR:
@@ -514,6 +518,9 @@ func (a *App) execute(line string) tea.Cmd {
 	}
 	if len(fields) == 1 && strings.Count(fields[0], "/") == 1 {
 		return a.openRepo(fields[0], "", 0)
+	}
+	if len(fields) == 1 && strings.HasPrefix(fields[0], "@") {
+		return a.openPerson(fields[0])
 	}
 	return a.flashCmd(nHint, "Nothing matches “"+strings.TrimSpace(line)+"”")
 }
@@ -598,4 +605,45 @@ func (a *App) searchDone(m searchResultMsg) {
 		a.pal.update(a, a.input.Value())
 		a.pal.sel = min(sel, max(len(a.pal.items)-1, 0))
 	}
+}
+
+// peopleMatching suggests the pages of people for q: with "@" in front, the
+// people you looked at last and the authors of your pull requests and
+// issues, and the login as typed.
+func (a *App) peopleMatching(q string) []suggestion {
+	typed, ok := strings.CutPrefix(q, "@")
+	if !ok {
+		return nil
+	}
+	seen := map[string]bool{}
+	var known []string
+	add := func(login string) {
+		if login != "" && !seen[strings.ToLower(login)] {
+			seen[strings.ToLower(login)] = true
+			known = append(known, login)
+		}
+	}
+	for _, p := range a.people {
+		add(p)
+	}
+	for _, pr := range a.st.prs {
+		add(pr.Author)
+	}
+	for _, is := range a.st.allIssues() {
+		add(is.Author)
+	}
+	var out []suggestion
+	for i, login := range known {
+		if s, idx, ok := fuzzy(typed, login); ok || typed == "" {
+			score := s + 60
+			if i < len(a.people) {
+				score += 20 // looked at lately
+			}
+			out = append(out, suggestion{kind: sugPerson, label: "@" + login, desc: "their page", cmd: login, score: score, idx: shift(idx, 1)})
+		}
+	}
+	if typed != "" && !seen[strings.ToLower(typed)] && gh.ValidLogin(typed) {
+		out = append(out, suggestion{kind: sugPerson, label: "@" + typed, desc: "their page", cmd: typed, score: 50})
+	}
+	return out
 }
