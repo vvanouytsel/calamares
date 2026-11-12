@@ -20,7 +20,7 @@ func personApp(t *testing.T) (*App, *personView) {
 		DisplayTitle: "delivery estimates", CreatedAt: now.Add(-40 * time.Minute), Actor: gh.User{Login: "sam"}}}
 	v := newPersonView(a, "sam")
 	v.at = now
-	v.p = gh.Person{Login: "sam", Name: "Sam Jansen",
+	v.p = gh.Person{Login: "sam", Name: "Sam Kimura",
 		Opened: []gh.PersonPR{
 			{Repo: "acme/webshop", Number: 57, Title: "feat: delivery estimates", State: "OPEN", CreatedAt: now.Add(-12 * time.Minute)},
 			{Repo: "acme/handbook", Number: 54, Title: "docs: onboarding page", State: "MERGED", CreatedAt: now.Add(-20 * 24 * time.Hour), MergedAt: now.Add(-5 * time.Hour)},
@@ -48,7 +48,7 @@ func TestAPersonPageListsWhatTheyDidNewestFirst(t *testing.T) {
 	if got := strings.Join(whats, ", "); got != want {
 		t.Errorf("activity:\n got %s\nwant %s", got, want)
 	}
-	wantAll(t, out, "Sam Jansen", "@sam · last 14 days, in repos you can see", "1 awaiting your review", "1 failed run", "1 merged",
+	wantAll(t, out, "Sam Kimura", "@sam · last 14 days, in repos you can see", "1 awaiting your review", "1 failed run", "1 merged",
 		"Activity 6", "Pull requests 2", "Runs 1", "Commits 2", "Reviews 1", "Issues 1", "AGE", "WHAT", "REPO", "TITLE")
 	if strings.Contains(out, "opened #48") {
 		t.Errorf("a pull request opened before the 14 days should only show for what happened since")
@@ -132,5 +132,41 @@ func TestTheGoToBoxFindsPeopleByAt(t *testing.T) {
 	drive(a, a.execute("@alex"), 0)
 	if v, ok := a.top().(*personView); !ok || v.login != "alex" {
 		t.Errorf("enter on @alex should open alex's page, top is %T", a.top())
+	}
+}
+
+func TestLookingForAPersonDoesNotSearchGitHubForRepos(t *testing.T) {
+	a := apiApp(t)
+	if a.scheduleSearch(":@nosuchuser") != nil {
+		t.Errorf("@nosuchuser should not search GitHub for repos named nosuchuser")
+	}
+	if a.scheduleSearch(":webshop") == nil {
+		t.Errorf("webshop should still search GitHub for repos")
+	}
+}
+
+func TestTheGoToBoxSuggestsMembersOfYourOrganizationsByLoginOrName(t *testing.T) {
+	a := apiApp(t)
+	a.st.prs = []gh.PullRequest{{Repo: "acme/webshop", Number: 1, Title: "x", Author: "kim-roos"}}
+	a.st.members = []gh.Member{{Login: "kim-peeters", Org: "acme"}, {Login: "sk_acme", Name: "Sam Kimura", Org: "acme"}}
+	a.pal.update(a, "@kim")
+	var got []string
+	for _, it := range a.pal.items {
+		got = append(got, it.cmd+" "+it.desc)
+	}
+	want := []string{"kim-roos their page", "kim-peeters their page", "sk_acme Sam Kimura · acme", "kim their page"}
+	if strings.Join(got, ", ") != strings.Join(want, ", ") {
+		t.Errorf("@kim suggests %q, want authors of your pull requests, then members by login or name, then the login as typed: %q", got, want)
+	}
+}
+
+func TestTheMembersAreReadOnceADay(t *testing.T) {
+	a := apiApp(t)
+	if a.st.loadMembers(a) == nil {
+		t.Fatalf("members never read should be read")
+	}
+	a.st.membersState.end(nil)
+	if a.st.loadMembers(a) != nil {
+		t.Errorf("members read just now should not be read again")
 	}
 }

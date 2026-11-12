@@ -65,8 +65,9 @@ type Person struct {
 	ForThem []PersonPR
 }
 
-// validLogin is what a GitHub login looks like; a bot ends in [bot].
-var validLogin = regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})(\[bot\])?$`)
+// validLogin is what a GitHub login looks like; a bot ends in [bot], and an
+// Enterprise Managed User in _ and the short code of its enterprise.
+var validLogin = regexp.MustCompile(`^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})(_[A-Za-z0-9]+)?(\[bot\])?$`)
 
 // ValidLogin reports whether login can be a GitHub login.
 func ValidLogin(login string) bool { return validLogin.MatchString(login) }
@@ -232,6 +233,79 @@ func (c *Client) personCommits(ctx context.Context, who, day string) ([]PersonCo
 	for _, it := range res.Items {
 		msg, _, _ := strings.Cut(it.Commit.Message, "\n")
 		out = append(out, PersonCommit{Repo: it.Repository.FullName, SHA: it.SHA, Message: msg, URL: it.HTMLURL, At: it.Commit.Author.Date})
+	}
+	return out, nil
+}
+
+// Member is someone in one of your organizations.
+type Member struct {
+	Login string `json:"l"`
+	Name  string `json:"n,omitempty"`
+	Org   string `json:"o"`
+}
+
+type memberPage struct {
+	PageInfo struct {
+		HasNextPage bool   `json:"hasNextPage"`
+		EndCursor   string `json:"endCursor"`
+	} `json:"pageInfo"`
+	Nodes []struct {
+		Login string `json:"login"`
+		Name  string `json:"name"`
+	} `json:"nodes"`
+}
+
+const orgsQuery = `query {
+  viewer { organizations(first: 100) { nodes { login
+    membersWithRole(first: 100) { pageInfo { hasNextPage endCursor } nodes { login name } } } } }
+}`
+
+const membersQuery = `query($org: String!, $after: String) {
+  organization(login: $org) { membersWithRole(first: 100, after: $after) { pageInfo { hasNextPage endCursor } nodes { login name } } }
+}`
+
+// OrgMembers reads the members of the organizations you belong to, each
+// once, with the first organization they were found in: one GraphQL request
+// for the organizations and their first 100 members, and one per further 100.
+// Without the read:org scope GitHub lists only public memberships.
+func (c *Client) OrgMembers(ctx context.Context) ([]Member, error) {
+	var orgs struct {
+		Viewer struct {
+			Organizations struct {
+				Nodes []struct {
+					Login   string     `json:"login"`
+					Members memberPage `json:"membersWithRole"`
+				} `json:"nodes"`
+			} `json:"organizations"`
+		} `json:"viewer"`
+	}
+	// An organization your token isn't authorised for answers with an error; the others still count.
+	if err := allowPartial(c.GraphQL(ctx, orgsQuery, nil, &orgs)); err != nil {
+		return nil, err
+	}
+	var out []Member
+	seen := map[string]bool{}
+	for _, org := range orgs.Viewer.Organizations.Nodes {
+		for page := org.Members; ; {
+			for _, n := range page.Nodes {
+				if n.Login != "" && !seen[strings.ToLower(n.Login)] {
+					seen[strings.ToLower(n.Login)] = true
+					out = append(out, Member{Login: n.Login, Name: n.Name, Org: org.Login})
+				}
+			}
+			if !page.PageInfo.HasNextPage {
+				break
+			}
+			var next struct {
+				Organization struct {
+					Members memberPage `json:"membersWithRole"`
+				} `json:"organization"`
+			}
+			if err := c.GraphQL(ctx, membersQuery, map[string]any{"org": org.Login, "after": page.PageInfo.EndCursor}, &next); err != nil {
+				return out, err
+			}
+			page = next.Organization.Members
+		}
 	}
 	return out, nil
 }

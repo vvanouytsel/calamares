@@ -391,7 +391,11 @@ func (a *App) updateSearch(msg tea.KeyMsg) tea.Cmd {
 	if v := a.input.Value(); v != before {
 		a.pal.sel = 0
 		a.pal.update(a, v)
-		return tea.Batch(cmd, a.scheduleSearch(v))
+		var members tea.Cmd
+		if strings.HasPrefix(strings.TrimSpace(strings.TrimPrefix(v, ":")), "@") {
+			members = a.st.loadMembers(a)
+		}
+		return tea.Batch(cmd, a.scheduleSearch(v), members)
 	}
 	return cmd
 }
@@ -565,11 +569,12 @@ type searchResultMsg struct {
 }
 
 // scheduleSearch searches GitHub once typing pauses (the search API allows
-// 30 requests a minute, so every keystroke would be too many).
+// 30 requests a minute, so every keystroke would be too many). An @ looks
+// for a person, so it searches no repos.
 func (a *App) scheduleSearch(line string) tea.Cmd {
 	q := strings.TrimSpace(strings.TrimPrefix(line, ":"))
 	a.search.seq++
-	if len(q) < 2 || strings.ContainsAny(q, " :") {
+	if len(q) < 2 || strings.ContainsAny(q, " :") || strings.HasPrefix(q, "@") {
 		a.search.busy = false
 		return nil
 	}
@@ -600,6 +605,12 @@ func (a *App) searchDone(m searchResultMsg) {
 	}
 	a.search.busy = false
 	a.search.query, a.search.results = m.query, m.repos
+	a.refreshPalette()
+}
+
+// refreshPalette suggests again for what is typed in the go-to box, when it
+// is open, keeping the selection where it can.
+func (a *App) refreshPalette() {
 	if a.mode == modeSearch {
 		sel := a.pal.sel
 		a.pal.update(a, a.input.Value())
@@ -608,8 +619,8 @@ func (a *App) searchDone(m searchResultMsg) {
 }
 
 // peopleMatching suggests the pages of people for q: with "@" in front, the
-// people you looked at last and the authors of your pull requests and
-// issues, and the login as typed.
+// people you looked at last, the authors of your pull requests and issues,
+// the members of your organizations by login or name, and the login as typed.
 func (a *App) peopleMatching(q string) []suggestion {
 	typed, ok := strings.CutPrefix(q, "@")
 	if !ok {
@@ -632,18 +643,42 @@ func (a *App) peopleMatching(q string) []suggestion {
 	for _, is := range a.st.allIssues() {
 		add(is.Author)
 	}
+	members := map[string]gh.Member{}
+	for _, m := range a.st.members {
+		members[strings.ToLower(m.Login)] = m
+	}
 	var out []suggestion
+	person := func(login string, score int, idx []int) {
+		desc := "their page"
+		if m := members[strings.ToLower(login)]; m.Name != "" {
+			desc = m.Name + " · " + m.Org
+		}
+		out = append(out, suggestion{kind: sugPerson, label: "@" + login, desc: desc, cmd: login, score: score, idx: shift(idx, 1)})
+	}
 	for i, login := range known {
 		if s, idx, ok := fuzzy(typed, login); ok || typed == "" {
 			score := s + 60
 			if i < len(a.people) {
 				score += 20 // looked at lately
 			}
-			out = append(out, suggestion{kind: sugPerson, label: "@" + login, desc: "their page", cmd: login, score: score, idx: shift(idx, 1)})
+			person(login, score, idx)
+		}
+	}
+	for _, m := range a.st.members {
+		if seen[strings.ToLower(m.Login)] {
+			continue
+		}
+		s, idx, ok := fuzzy(typed, m.Login)
+		if byName, _, named := fuzzy(typed, m.Name); named && m.Name != "" && (!ok || byName > s) {
+			s, idx, ok = byName, nil, true
+		}
+		if ok {
+			seen[strings.ToLower(m.Login)] = true
+			person(m.Login, s+40, idx)
 		}
 	}
 	if typed != "" && !seen[strings.ToLower(typed)] && gh.ValidLogin(typed) {
-		out = append(out, suggestion{kind: sugPerson, label: "@" + typed, desc: "their page", cmd: typed, score: 50})
+		out = append(out, suggestion{kind: sugPerson, label: "@" + typed, desc: "their page", cmd: typed, score: 30})
 	}
 	return out
 }
