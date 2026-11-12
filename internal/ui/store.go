@@ -44,6 +44,10 @@ type store struct {
 	owners      map[string]gh.CodeOwners
 	ownersState loadState
 
+	// members are the people in your organizations, for the go-to box.
+	members      []gh.Member
+	membersState loadState
+
 	runsState map[string]*loadState // how reading each repo's runs went; see runState
 	// canApprove records, per waiting run, whether you may approve one of its deployments.
 	canApprove map[int64]bool
@@ -110,11 +114,12 @@ var repoStatusFilter = gh.RunFilter{PerPage: 10}
 const sweepSince = 365 * 24 * time.Hour
 
 const (
-	snapshotUses   = "uses"
-	snapshotOwners = "codeowners"
-	snapshotRepos  = "repos"
-	snapshotPRs    = "pulls"
-	snapshotIssues = "issues"
+	snapshotUses    = "uses"
+	snapshotOwners  = "codeowners"
+	snapshotMembers = "members"
+	snapshotRepos   = "repos"
+	snapshotPRs     = "pulls"
+	snapshotIssues  = "issues"
 )
 
 // stReposMsg is one page of the repo sweep; next is the cursor of the
@@ -189,6 +194,9 @@ func (s *store) seed(a *App) {
 	}
 	if at, ok := a.client.Recall(snapshotOwners, &s.owners); ok {
 		s.ownersState.at = at
+	}
+	if at, ok := a.client.Recall(snapshotMembers, &s.members); ok {
+		s.membersState.at = at
 	}
 	for _, r := range a.repos {
 		if r.DefaultBranch == "" {
@@ -411,6 +419,26 @@ func (s *store) loadOwners(a *App, force bool) tea.Cmd {
 	}
 }
 
+type stMembersMsg struct {
+	members []gh.Member
+	err     error
+}
+
+// membersStale is how old the members read may get before they are read again.
+const membersStale = 24 * time.Hour
+
+// loadMembers reads the members of your organizations when those read are
+// older than membersStale.
+func (s *store) loadMembers(a *App) tea.Cmd {
+	if time.Since(s.membersState.at) < membersStale || !s.membersState.waited(time.Minute) || !s.membersState.begin() {
+		return nil
+	}
+	return func() tea.Msg {
+		members, err := a.client.OrgMembers(gh.Background(context.Background()))
+		return stMembersMsg{members, err}
+	}
+}
+
 // loadIssues reads the open issues that concern you: one GraphQL request.
 func (s *store) loadIssues(a *App) tea.Cmd {
 	if !s.issuesState.begin() {
@@ -567,6 +595,15 @@ func (s *store) handle(a *App, msg tea.Msg) (tea.Cmd, bool) {
 		}
 		maps.Copy(s.owners, m.owners)
 		a.client.Remember(snapshotOwners, s.owners)
+		return nil, true
+	case stMembersMsg:
+		s.membersState.end(m.err)
+		if m.err != nil {
+			return a.flashCmd(nError, "Could not read the members of your organizations: "+m.err.Error()), true
+		}
+		s.members = m.members
+		a.client.Remember(snapshotMembers, s.members)
+		a.refreshPalette()
 		return nil, true
 	case stIssuesMsg:
 		s.issuesState.end(m.err)

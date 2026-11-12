@@ -29,7 +29,9 @@ There are seven places, always visible at the top:
   that ask for your review, and their reviews of yours. The panel shows the line under the cursor, the review
   requests between you (theirs for you, yours for them), what they did in each repository and their activity per day.
   It is read with one GraphQL query and one commit search when you open it, and again after 5 minutes; runs come
-  from what Calamares already holds.
+  from what Calamares already holds. After `@` the `:` box suggests the people you looked at lately, the authors of
+  your pull requests and issues and the members of your organizations, by login or name. The members are read once a
+  day, the first time you type `@`; without the `read:org` scope GitHub lists only public members.
 
 `Enter` opens, `Esc` goes back, and the bar at the bottom shows the keys that apply to what's
 selected, and where `esc` takes you. The header names where you are: the place, then each screen you
